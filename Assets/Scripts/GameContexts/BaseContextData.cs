@@ -25,7 +25,7 @@ public class ActionPhaseData: BaseContextData
 
     public override void Refresh(GameController gameController)
     {
-        Turns = gameController.Turns;
-        TimeUnits = gameController.TimeUnits;
+        Turns = gameController.TimeController.Turns;
+        TimeUnits = gameController.TimeController.TimeUnits;
     }
 }

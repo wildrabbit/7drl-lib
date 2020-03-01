@@ -18,14 +18,17 @@ public class GameController : MonoBehaviour
     [SerializeField] Camera _uiCamera;
 
     [SerializeField] HUD _hudPrefab;
+
+    // TODO: Map(s)
     [SerializeField] FairyBombMap _mapPrefab;
     [SerializeField] PaintMap _paintMapPrefab;
 
+    // Why isn't this part of gameData?
     [SerializeField] LootItemData _lootItemData;
 
-    public int Turns => _turns;
-    public float TimeUnits => _elapsedUnits;
+    public TimeController TimeController => _timeController;
 
+    TimeController _timeController;
     IEntityController _entityController;
     MonsterCreator _monsterCreator;
     AIController _aiController;
@@ -35,16 +38,7 @@ public class GameController : MonoBehaviour
     List<GameObject> _explosionItems;
 
     float _inputDelay;
-    float _defaultTimeScale;
-
-    // Time control / contexts
-    float _timeScale;
-    float _elapsedUnits;
-    int _turns;
-
-    List<IScheduledEntity> _scheduledEntities;
-    List<IScheduledEntity> _scheduledToAdd;
-
+    
     PlayContext _playContext;
     
     // :thinking: Does the behaviour/data make sense for this? Should context also include the data?
@@ -64,15 +58,17 @@ public class GameController : MonoBehaviour
         _input = new GameInput();
 
         _entityController = new EntityController();
+        _timeController = new TimeController();
+        _timeController.Init(_entityController, _gameData.DefaultTimescale);
+
         _lootController = new LootController();
         _eventLog = new GameEventLog();
         _aiController = new AIController();
         _monsterCreator = new MonsterCreator();
 
         _explosionItems = new List<GameObject>();
-        _scheduledEntities = new List<IScheduledEntity>();
-        _scheduledToAdd = new List<IScheduledEntity>();
         _result = GameResult.None;
+
         InitializePlayContexts();
         InitializePlayContextsData();
     }
@@ -105,8 +101,6 @@ public class GameController : MonoBehaviour
     {
         _aiController.Cleanup();
 
-        _entityController.OnEntitiesAdded -= RegisterScheduledEntities;
-        _entityController.OnEntitiesRemoved -= UnregisterScheduledEntities;
         _entityController.OnBombExploded -= BombExploded;
         _entityController.OnBombSpawned -= BombSpawned;
         _entityController.OnBombExploded -= _map.BombExploded;
@@ -135,8 +129,7 @@ public class GameController : MonoBehaviour
 
         _lootController.Cleanup();
 
-        _scheduledEntities.Clear();
-        _scheduledToAdd.Clear();
+        _timeController.Cleanup();
     }
 
     private void BombSpawned(Bomb bomb)
@@ -179,7 +172,7 @@ public class GameController : MonoBehaviour
     {
         UnRegisterEntityEvents();
         _result = GameResult.Lost;
-        GameFinishedEvent evt = new GameFinishedEvent(_turns, _elapsedUnits, GameResult.Lost);
+        GameFinishedEvent evt = new GameFinishedEvent(_timeController.Turns, _timeController.TimeUnits, GameResult.Lost);
         _eventLog.EndSession(evt);
 
         StartCoroutine(DelayedPurge(0.25f));
@@ -193,20 +186,17 @@ public class GameController : MonoBehaviour
     void StartGame()
     {
         _inputDelay = _gameData.InputDelay;
-        _defaultTimeScale = _gameData.DefaultTimescale;
         _input.Init(_inputDelay);
 
         _map = Instantiate<FairyBombMap>(_mapPrefab);
         _map.InitFromData(_gameData.MapData, _eventLog);
 
         _paintMap = Instantiate<PaintMap>(_paintMapPrefab);
-        _scheduledEntities.Add(_paintMap);
-
+        _timeController.AddScheduledEntity(_paintMap);
+        
         _lootController.Init(_lootItemData, _map, _entityController, _eventLog);
 
         _entityController.Init(_map, _paintMap, _gameData.EntityCreationData);
-        _entityController.OnEntitiesAdded += RegisterScheduledEntities;
-        _entityController.OnEntitiesRemoved += UnregisterScheduledEntities;
         _entityController.CreatePlayer(_gameData.PlayerData, _map.PlayerStart);
         _entityController.OnPlayerKilled += PlayerKilled;
         _entityController.OnBombExploded += BombExploded;
@@ -230,7 +220,7 @@ public class GameController : MonoBehaviour
 
         // le hud
         _hud = Instantiate<HUD>(_hudPrefab);
-        _hud.Init(_eventLog, _entityController.Player, () => Turns, () => TimeUnits, _uiCamera);
+        _hud.Init(_eventLog, _entityController.Player, () => _timeController.Turns, () => _timeController.TimeUnits, _uiCamera);
 
         // populate the level
         _monsterCreator.Init(_entityController, _aiController, _map, _eventLog);
@@ -241,8 +231,7 @@ public class GameController : MonoBehaviour
         _entityController.AddNewEntities();
 
         // Init game control / time vars
-        _elapsedUnits = 0;
-        _turns = 0;
+        _timeController.Start();
         _result = GameResult.Running;
 
         _paintMap.Init(_map, _entityController, _eventLog);
@@ -285,7 +274,7 @@ public class GameController : MonoBehaviour
 
     private void OnEntityHealth(BaseEntity e, int dmg, bool explosion, bool poison, bool heal, bool collision)
     {
-        EntityHealthEvent evt = new EntityHealthEvent(_turns, _elapsedUnits);
+        EntityHealthEvent evt = new EntityHealthEvent(_timeController.Turns, _timeController.TimeUnits);
         evt.name = e.Name;
         evt.isPlayer = e is Player;
         evt.isCollision = collision;
@@ -298,7 +287,7 @@ public class GameController : MonoBehaviour
 
     private void SelectedItem(int idx, BombInventoryEntry entry, IBomberEntity entity)
     {
-        PlayerItemEvent evt = new PlayerItemEvent(_turns, _elapsedUnits);
+        PlayerItemEvent evt = new PlayerItemEvent(_timeController.Turns, _timeController.TimeUnits);
         evt.isAdded = false;
         evt.isDepleted = false;
         evt.isSelected = true;
@@ -311,7 +300,7 @@ public class GameController : MonoBehaviour
 
     private void DepletedItem(int idx, BombInventoryEntry entry, IBomberEntity entity)
     {
-        PlayerItemEvent evt = new PlayerItemEvent(_turns, _elapsedUnits);
+        PlayerItemEvent evt = new PlayerItemEvent(_timeController.Turns, _timeController.TimeUnits);
         evt.isAdded = false;
         evt.isDepleted = true;
         evt.isSelected = false;
@@ -324,7 +313,7 @@ public class GameController : MonoBehaviour
 
     private void DroppedItem(int idx, BombInventoryEntry entry, IBomberEntity entity)
     {
-        PlayerItemEvent evt = new PlayerItemEvent(_turns, _elapsedUnits);
+        PlayerItemEvent evt = new PlayerItemEvent(_timeController.Turns, _timeController.TimeUnits);
         evt.isAdded = false;
         evt.isDepleted = false;
         evt.isSelected = false;
@@ -337,7 +326,7 @@ public class GameController : MonoBehaviour
 
     private void AddedToInventory(int idx, BombInventoryEntry entry, IBomberEntity entity)
     {
-        PlayerItemEvent evt = new PlayerItemEvent(_turns, _elapsedUnits);
+        PlayerItemEvent evt = new PlayerItemEvent(_timeController.Turns, _timeController.TimeUnits);
         evt.isAdded = true;
         evt.isDepleted = false;
         evt.isSelected = false;
@@ -350,7 +339,7 @@ public class GameController : MonoBehaviour
 
     private void OnPlayerMonsterCollision(Player p, Monster m, int playerDmg, int monsterDmg)
     {
-        PlayerMonsterCollisionEvent evt = new PlayerMonsterCollisionEvent(_turns, _elapsedUnits);
+        PlayerMonsterCollisionEvent evt = new PlayerMonsterCollisionEvent(_timeController.Turns, _timeController.TimeUnits);
         evt.PlayerName = p.name;
         evt.MonsterName = m.name;
         evt.PlayerDamageReceived = playerDmg;
@@ -378,23 +367,7 @@ public class GameController : MonoBehaviour
 
         _input.OnLayoutChanged -= _hud.OnInputLayoutChanged;
     }
-
-    void RegisterScheduledEntities(List<BaseEntity> entities)
-    {
-        foreach(var e in entities)
-        {
-            _scheduledEntities.Add(e);
-        }
-    }
-
-    void UnregisterScheduledEntities(List<BaseEntity> entities)
-    {
-        foreach(var e in entities)
-        {
-            _scheduledEntities.Remove(e);
-        }
-    }
-
+    
     // Update is called once per frame
     void Update()
     {
@@ -421,13 +394,7 @@ public class GameController : MonoBehaviour
 
         if (timeWillPass)
         {
-            float units = _defaultTimeScale * (1 / _entityController.Player.Speed);
-            foreach (var scheduled in _scheduledEntities)
-            {
-                scheduled.AddTime(units, ref _playContext);
-            }
-            _elapsedUnits += units;
-            _turns++;
+            _timeController.Update(ref _playContext);            
         }
 
         _entityController.RemovePendingEntities();
@@ -444,7 +411,7 @@ public class GameController : MonoBehaviour
         if (_map.IsGoal(_entityController.Player.Coords))
         {
             // TODO: Won event
-            GameFinishedEvent evt = new GameFinishedEvent(_turns, _elapsedUnits, GameResult.Won);
+            GameFinishedEvent evt = new GameFinishedEvent(_timeController.Turns, _timeController.TimeUnits, GameResult.Won);
             _eventLog.EndSession(evt);
             return GameResult.Won;
         }

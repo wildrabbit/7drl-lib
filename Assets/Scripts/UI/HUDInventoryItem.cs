@@ -20,19 +20,19 @@ public class HUDInventoryItem : MonoBehaviour
         _hotkey.text = (idx + 1).ToString();
     }
 
-    internal void SetEntry(BombInventoryEntry entry)
-    {
-        bool active = entry != null;
-        _itemXfm.gameObject.SetActive(active);
-        if(!active)
-        {
-            return;
-        }
+    //internal void SetEntry(BombInventoryEntry entry)
+    //{
+    //    bool active = entry != null;
+    //    _itemXfm.gameObject.SetActive(active);
+    //    if(!active)
+    //    {
+    //        return;
+    //    }
 
-        _icon.sprite = entry.Bomb.UIIcon;
-        _name.text = entry.Bomb.DisplayName;
-        SetAmount(entry.Unlimited, entry.Amount);
-    }
+    //    _icon.sprite = entry.Bomb.UIIcon;
+    //    _name.text = entry.Bomb.DisplayName;
+    //    SetAmount(entry.Unlimited, entry.Amount);
+    //}
 
     public void SetAmount(bool unlimited, int amount)
     {
@@ -49,8 +49,8 @@ public class HUDInventoryItem : MonoBehaviour
         _selection.gameObject.SetActive(true);
     }
 
-    internal void UpdateItem(BombInventoryEntry entry)
-    {
-        SetAmount(entry.Unlimited, entry.Amount);
-    }
+    //internal void UpdateItem(BombInventoryEntry entry)
+    //{
+    //    SetAmount(entry.Unlimited, entry.Amount);
+    //}
 }

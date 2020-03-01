@@ -15,6 +15,8 @@ public class TimeController: IDisposable
 
     IEntityController _entityController;
 
+    public float GameSpeed => _entityController.Player.Speed;
+
     public void Init(IEntityController entityController, float defaultTimescale)
     {
         _timeScale = defaultTimescale;
@@ -32,9 +34,9 @@ public class TimeController: IDisposable
         _turnCount = 0;
     }
 
-    public void Update(ref PlayContext playContext)
+    public void Update(ref int playContext)
     {
-        float units = _timeScale * (1 / _entityController.Player.Speed);
+        float units = _timeScale * (1 / GameSpeed);
         foreach (var scheduled in _scheduledEntities)
         {
             scheduled.AddTime(units, ref playContext);

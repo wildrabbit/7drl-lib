@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.Serialization;
+﻿using UnityEngine;
 
 [System.Serializable]
 public class HPTraitData
@@ -12,23 +10,6 @@ public class HPTraitData
     public int RegenAmount; // amount or percent??
 }
 
-
-[System.Serializable]
-public class BomberData
-{
-    [FormerlySerializedAs("DeployedBombLimit")] public int DefaultDeployLimit;
-    public BombInventoryEntry[] InventoryEntry;
-    public int DefaultSelection;
-    public int InventorySize;
-    public bool IsFirstItemFixed;
-}
-
-[System.Serializable]
-public class MovingEntityData
-{
-    public BombWalkabilityType BombWalkability;
-    public BombImmunityType BombImmunity;
-}
 
 public class BaseEntityData: ScriptableObject
 {

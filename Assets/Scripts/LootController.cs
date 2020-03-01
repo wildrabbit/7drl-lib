@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using UnityEngine;
 
 
+
 [System.Serializable]
 public class LootSpawn
 {
-    public BombData item;
+    public int lootID;
     public int amount;
     public Vector2Int coords;
 }
@@ -15,7 +16,7 @@ public class LootSpawn
 public class LootInfo
 {
     public float LootChance;
-    public List<BombData> Items;
+    //public List<BombData> Items;
 
     public int MinItems; // amount of same item
     public int MaxItems;
@@ -26,36 +27,28 @@ public class LootInfo
 
 public class LootController
 {
-    FairyBombMap _map;
+    IMapController _map;
     IEntityController _entityController;
-    GameEventLog _eventLog;
-    LootItemData _data;
+    LootData _lootData;
 
-    public void Init(LootItemData _itemData, FairyBombMap map, IEntityController entityController, GameEventLog eventLog)
+    public void Init(LootData _itemData, IMapController map, IEntityController entityController)
     {
         _map = map;
         _entityController = entityController;
-        _eventLog = eventLog;
-
+        
         _entityController.OnMonsterKilled += OnMonsterKilled;
-        _map.OnTileDestroyed += OnTileDestroyed;
-    }
-
-    private void OnTileDestroyed(FairyBombTile destroyedTile, Vector2Int coords)
-    {
-        GenerateLootAt(destroyedTile.LootInfo, coords);
     }
 
     private void OnMonsterKilled(Monster monster)
     {
-        GenerateLootAt(monster.LootInfo, monster.Coords);
+        //GenerateLootAt(monster.LootInfo, monster.Coords);
     }
 
     public void LoadLootSpawns(List<LootSpawn> lootSpawns)
     {
         foreach(var spawn in lootSpawns)
         {
-            _entityController.CreatePickable(_data, spawn.item, spawn.coords, spawn.amount, false);
+            // _entityController.CreatePickable(_data, spawn.item, spawn.coords, spawn.amount, false);
         }
     }
 
@@ -67,22 +60,16 @@ public class LootController
             for(int i = 0; i < numRolls; ++i)
             {
                 int amount = UnityEngine.Random.Range(info.MinItems, info.MaxItems + 1);
-                BombData item = info.Items[UnityEngine.Random.Range(0, info.Items.Count)];
-                _entityController.CreatePickable(_data, item, coords, amount, false);
+                // select Data
+                // _entityController.CreatePickable(_data, item, coords, amount, false);
             }
             return true;
         }
         return false;
     }
 
-    internal void LoadLootSpawns(object lootSpawns)
-    {
-        throw new NotImplementedException();
-    }
-
     public void Cleanup()
     {
         _entityController.OnMonsterKilled -= OnMonsterKilled;
-        _map.OnTileDestroyed -= OnTileDestroyed;
     }
 }

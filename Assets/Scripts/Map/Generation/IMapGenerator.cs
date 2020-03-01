@@ -1,13 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using UnityEngine;
-
-public class BaseMapContext
+﻿public class BaseMapContext
 {
     public BaseMapGeneratorData GeneratorData;
+    public int noTile;
 }
 
 public interface IMapGenerator
 {
-    void GenerateMap(ref TileType[] map, BaseMapContext mapGenContext);
+    void GenerateMap(ref int[] map, BaseMapContext mapGenContext);
 }

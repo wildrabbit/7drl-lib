@@ -1,18 +1,18 @@
 ﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Tilemaps;
 
 public class BaseEntityDependencies
 {
     public Transform ParentNode;
     public IEntityController EntityController;
-    public FairyBombMap Map;
-    public PaintMap PaintMap;
+    public IMapController MapController;
     public Vector2Int Coords;
 }
 
 public class TileBasedEffect
 {
-    public InGameTile Source;
     public int Elapsed;
     public int Duration;
 }
@@ -28,9 +28,8 @@ public abstract class BaseEntity : MonoBehaviour, IScheduledEntity
         set
         {
             _coords = value;
-            _map.ConstrainCoords(ref _coords);
-            EvaluatePaintMap();
-            Vector2 targetPos = _map.WorldFromCoords(_coords);
+            _mapController.ConstrainCoords(ref _coords);
+            Vector2 targetPos = _mapController.WorldFromCoords(_coords);
             transform.position = targetPos;
             OnEntityMoved?.Invoke(_coords, targetPos, this);
         }
@@ -44,9 +43,8 @@ public abstract class BaseEntity : MonoBehaviour, IScheduledEntity
 
     protected Transform _view;
     protected BaseEntityData _entityData;
-    protected FairyBombMap _map;
-    protected PaintMap _paintMap;
     protected IEntityController _entityController;
+    protected IMapController _mapController;
     protected Vector2Int _coords;
     protected bool _active;
 
@@ -60,17 +58,12 @@ public abstract class BaseEntity : MonoBehaviour, IScheduledEntity
     {
         _entityData = entityData;
         _entityController = deps.EntityController;
-        _map = deps.Map;
-        _paintMap = deps.PaintMap;
+        _mapController = deps.MapController;
+
         Frozen = false;
         DoInit(deps);
         Coords = deps.Coords;
         CreateView();
-    }
-
-    internal void AppliedPaint(PaintData paintData)
-    {
-        throw new NotImplementedException();
     }
 
     protected abstract void DoInit(BaseEntityDependencies dependencies);
@@ -89,14 +82,14 @@ public abstract class BaseEntity : MonoBehaviour, IScheduledEntity
 
     public void RefreshCoords()
     {
-        _coords = _map.CoordsFromWorld(transform.position);
+        _coords = _mapController.CoordsFromWorld(transform.position);
     }
 
     void OnRemovedPaint()
     {
     }
 
-    public abstract void AddTime(float timeUnits, ref PlayContext playContext);
+    public abstract void AddTime(float timeUnits, ref int playContext);
 
     public virtual void OnAdded()
     {
@@ -108,11 +101,6 @@ public abstract class BaseEntity : MonoBehaviour, IScheduledEntity
         Cleanup();
     }
 
-    void EvaluatePaintMap()
-    {
-
-    }
-
     public virtual void SetSpeedRate(float speedRate)
     {
     }
@@ -120,4 +108,6 @@ public abstract class BaseEntity : MonoBehaviour, IScheduledEntity
     public virtual void ResetSpeedRate()
     {
     }
+
+    public abstract bool TryResolveMoveIntoCoords(Vector2Int coords);
 }

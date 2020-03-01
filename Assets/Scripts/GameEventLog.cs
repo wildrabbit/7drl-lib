@@ -32,92 +32,7 @@ public abstract class BaseEvent
 
 }
 
-public class PlayerItemEvent: BaseEvent
-{
-    public BombData item;
-    public bool isAdded;
-    public bool isSelected;
-    public bool isDropped;
-    public bool isDepleted;
-    public PlayerItemEvent(int Turns, float Units)
-        :base(Turns, Units)
-    {
-
-    }
-
-    public override EventCategory Category => EventCategory.Information;
-
-    public override string Message()
-    {
-        if(isAdded)
-        {
-            return $"You've picked up a <b>{item.DisplayName}</b>\n";
-        }
-        else if(isDropped)
-        {
-            return $"You've dropped a <b>{item.DisplayName}</b>\n";
-        }
-        else if (isSelected)
-        {
-            return $"SELECTED: <b>{item.DisplayName}</b>\n";
-        }
-        else if(isDepleted)
-        {
-            return $"You've run out of <b>{item.DisplayName}</b>\n";
-        }
-        return string.Empty;
-    }
-}
-
-public class EntityHealthEvent: BaseEvent
-{
-    public string name;
-    public int dmg;
-    public bool isPlayer;
-    public bool isHeal;
-    public bool isExplosion;
-    public bool isCollision;
-    public bool isPoison;
-    public EntityHealthEvent(int Turns, float Units)
-        : base(Turns, Units)
-    {
-
-    }
-
-    public override EventCategory Category => EventCategory.Information;
-
-    public override string Message()
-    {
-        if(isExplosion) return $"{name} got hit by Explosion! Received {dmg} damage\n";
-        if(isHeal) return $"{name} restored {dmg} HP\n";
-        if(isPoison) return $"{name} took {dmg} poison damage\n";
-        return string.Empty;
-    }
-}
-
-public class PlayerMonsterCollisionEvent: BaseEvent
-{
-    public string PlayerName;
-    public string MonsterName;
-    public int PlayerDamageReceived;
-    public int MonsterDamageReceived;
-
-    public PlayerMonsterCollisionEvent(int Turns, float Units)
-        :base(Turns, Units)
-    {
-
-    }
-
-    public override EventCategory Category => EventCategory.Information;
-
-    public override string Message()
-    {
-        StringBuilder b = new StringBuilder($"{MonsterName} and you have clashed! You've received {PlayerDamageReceived} damage!");
-        return b.ToString();
-    }
-}
-
-public class GameSetupEvent: BaseEvent
+public class GameSetupEvent : BaseEvent
 {
     public override EventCategory Category => EventCategory.GameSetup;
     public int Seed; // Random stuff (TODO)
@@ -128,13 +43,16 @@ public class GameSetupEvent: BaseEvent
     public Vector2Int MapSize;
     public int[] MapTiles;
 
-    public GameSetupEvent()
-        :base(0, 0)
+    string _welcomeMessage;
+
+    public GameSetupEvent(string welcomeMessage)
+        : base(0, 0)
     {
+        _welcomeMessage = welcomeMessage;
     }
     public override string Message()
     {
-        StringBuilder b = new StringBuilder("=====Welcome to the Dungeon Garden, Berry. Find the exit!\n");
+        StringBuilder b = new StringBuilder(_welcomeMessage);
         return b.ToString();
     }
 }
@@ -143,159 +61,23 @@ public class GameFinishedEvent : BaseEvent
 {
     public override EventCategory Category => EventCategory.GameEnd;
     public GameResult Result;
-    public GameFinishedEvent(int turns, float time, GameResult result)
-        :base(turns, time)
+    string _endMessage;
+
+    public GameFinishedEvent(int turns, float time, GameResult result, string endMessage)
+        : base(turns, time)
     {
         Result = result;
+        _endMessage = endMessage;
     }
 
     public override string Message()
     {
         StringBuilder builder = new StringBuilder(PrintTime());
-        if(Result == GameResult.Won)
-        {
-            builder.Append("Congratulations, you managed to escape from the Dungeon Garden!");
-        }
-        else if (Result == GameResult.Lost)
-        {
-            builder.Append("You've died.");
-        }
-        builder.AppendLine("Tap any key to restart");
+        builder.Append(_endMessage);
         return builder.ToString();
     }
 }
 
-
-public class PlayerActionEvent: BaseEvent
-{
-    enum ActionType
-    {
-        Movement,
-        Idle,
-        BombPlacement,
-        BombDetonation,
-        // TODO: Grabbing loot, equipping, consuming, etc
-    }
-
-    public override EventCategory Category => EventCategory.PlayerAction;
-    ActionType PlayerActionType;
-    public MoveDirection PlayerMoveDirection;
-    public Vector2Int EventCoords;
-
-    public PlayerActionEvent(int turns, float time)
-        :base(turns, time)
-    {
-
-    }
-
-    public void SetMovement(MoveDirection moveDir, Vector2Int coords)
-    {
-        PlayerActionType = ActionType.Movement;
-        PlayerMoveDirection = moveDir;
-        EventCoords = coords;
-    }
-
-    public void SetIdle()
-    {
-        PlayerActionType = ActionType.Idle;
-    }
-
-    public void SetBomb(Vector2Int coords)
-    {
-        PlayerActionType = ActionType.BombPlacement;
-        EventCoords = coords;
-    }
-
-    public override string Message()
-    {
-        StringBuilder builder = new StringBuilder(PrintTime());
-        switch(PlayerActionType)
-        {
-            case ActionType.Movement:
-            {
-                builder.AppendLine($"Player moves <b>{PlayerMoveDirection}</b> to <b>{EventCoords}</b>");
-                break;
-            }
-            case ActionType.Idle:
-            {
-                builder.AppendLine($"Player remains idle and contemplates her own existence");
-                break;
-            }
-            case ActionType.BombPlacement:
-            {
-                builder.AppendLine($"Player places bomb @ <b>{EventCoords}</b>");
-                break;
-            }
-        }
-        return builder.ToString();
-    }
-}
-
-
-public class BombActionEvent : BaseEvent
-{
-    enum ActionType
-    {
-        BombSpawned,
-        BombTimesOut,
-        BombChainExplosion
-        // Detonated by owner 
-    }
-    public override EventCategory Category => EventCategory.Information;
-
-    public BombActionEvent(int turns, float timeUnits)
-        :base(turns, timeUnits)
-    {
-
-    }
-
-    public Vector2Int Coords;
-    public string Name;
-    public string DetonatorName;
-    public Vector2Int DetonatorCoords;
-
-    ActionType BombActionType;
-    public void SetSpawned(Bomb bomb)
-    {
-        BombActionType = ActionType.BombSpawned;
-        Name = bomb.name;
-        Coords = bomb.Coords;
-    }
-
-    public void SetTimedOut(Bomb bomb)
-    {
-        BombActionType = ActionType.BombTimesOut;
-        Name = bomb.name;
-        Coords = bomb.Coords;
-    }
-
-    public void SetChainExplosion(Bomb exploding, Bomb detonator)
-    {
-        BombActionType = ActionType.BombChainExplosion;
-        Name = exploding.name;
-        Coords = exploding.Coords;
-        DetonatorName = detonator.name;
-        DetonatorCoords = detonator.Coords;
-    }
-
-    public override string Message()
-    {
-        StringBuilder builder = new StringBuilder(PrintTime());
-        switch (BombActionType)
-        {
-            case ActionType.BombSpawned:
-                builder.AppendLine($"<b>{Name}</b> Spawns @ <b>{Coords}</b>");
-                break;
-            case ActionType.BombTimesOut:
-                builder.AppendLine($"<b>{Name}</b> Times out and explodes");
-                break;
-            case ActionType.BombChainExplosion:
-                builder.AppendLine($"<b>{DetonatorName}</b> @ <b>{DetonatorCoords}</b> Causes a chain reaction and makes <b>{Name}</b> explode");
-                break;
-        }
-        return builder.ToString();
-    }
-}
 
 public delegate void EventAddedDelegate(BaseEvent lastAdded);
 public delegate void SessionStartedDelegate();

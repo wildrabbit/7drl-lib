@@ -2,30 +2,14 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "New FixedGeneratorData", menuName = "FAIRY BOMB/MapGen/Fixed Generator Data")]
+[CreateAssetMenu(fileName = "New FixedGeneratorData", menuName = "7DRL_Lib/MapGen/Fixed Generator Data")]
 public class FixedMapGeneratorData : BaseMapGeneratorData
 {
     public Vector2Int PlayerStart;
-    public List<MonsterSpawn> MonsterSpawns;
-    public List<LootSpawn> LootSpawns;
     public TextAsset MapInfo;
 
-    public TileType[] LevelData
-    {
-        get
-        {
-            //if (_levelTiles == null)
-            {
-                BuildLevelData();                
-            }
-            return _levelTiles;
-        }
-    }
-    
-    TileType[] _levelTiles;
-    Vector2Int _levelSize;
-
     public override GeneratorType GeneratorType => GeneratorType.Fixed;
+    public int[] LevelData => _levelTiles;
 
     public override Vector2Int MapSize
     {
@@ -38,6 +22,10 @@ public class FixedMapGeneratorData : BaseMapGeneratorData
             return _levelSize;
         }
     }
+
+    int[] _levelTiles;
+    Vector2Int _levelSize;
+
 
     bool BuildLevelData()
     {
@@ -58,7 +46,7 @@ public class FixedMapGeneratorData : BaseMapGeneratorData
         }
 
         _levelSize = new Vector2Int(Int32.Parse(dims[0]), Int32.Parse(dims[1]));
-        _levelTiles = new TileType[_levelSize.x * _levelSize.y];
+        _levelTiles = new int[_levelSize.x * _levelSize.y];
         if (lines.Length != (_levelSize.x + 1))
         {
             Debug.LogError("Invalid row count");
@@ -75,7 +63,7 @@ public class FixedMapGeneratorData : BaseMapGeneratorData
             }
             for (int j = 0; j < tilesRow.Length; ++j)
             {
-                _levelTiles[(i - 1) * _levelSize.y + j] = (TileType)Int32.Parse(tilesRow[j]);
+                _levelTiles[(i - 1) * _levelSize.y + j] = Int32.Parse(tilesRow[j]);
             }
         }
         return true;

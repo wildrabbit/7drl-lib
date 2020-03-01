@@ -11,171 +11,119 @@ public enum GameResult
     Lost
 }
 
-public class GameController : MonoBehaviour
+public abstract class GameController : MonoBehaviour
 {
+    public class PlayStates
+    {
+        public const int Action = 0;
+        public const int GameOver = 1;
+        public const int Last = PlayStates.GameOver;
+    }
+
     [SerializeField] GameData _gameData;
     [SerializeField] CameraController _cameraController;
-    [SerializeField] Camera _uiCamera;
-
+    
     [SerializeField] HUD _hudPrefab;
 
-    // TODO: Map(s)
-    [SerializeField] FairyBombMap _mapPrefab;
-    [SerializeField] PaintMap _paintMapPrefab;
+    public BaseGameEvents GameEvents;
 
-    // Why isn't this part of gameData?
-    [SerializeField] LootItemData _lootItemData;
+    protected IMapController _mapController;
+    protected TimeController _timeController;
+    protected IEntityController _entityController;
 
     public TimeController TimeController => _timeController;
 
-    TimeController _timeController;
-    IEntityController _entityController;
-    MonsterCreator _monsterCreator;
-    AIController _aiController;
-    LootController _lootController;
-    GameEventLog _eventLog;
-    HUD _hud;
-    List<GameObject> _explosionItems;
-
     float _inputDelay;
     
-    PlayContext _playContext;
+    int _playContext;
+    bool _loading;
+    public bool Loading => _loading;
     
     // :thinking: Does the behaviour/data make sense for this? Should context also include the data?
-    Dictionary<PlayContext, IPlayContext> _playContexts;
-    Dictionary<PlayContext, BaseContextData> _playContextData;
+    Dictionary<int, IPlayState> _playStates;
+    Dictionary<int, PlayStateContext> _playContextData;
 
-    GameInput _input;
+    BaseInputController _input;
     GameResult _result;
     
-    //----------------------- Shortcuts --------------------/
-
-    FairyBombMap _map;
-    PaintMap _paintMap;
-
-    void Awake()
+    protected virtual void Awake()
     {
-        _input = new GameInput();
-
-        _entityController = new EntityController();
+        _input = CreateInputController();
         _timeController = new TimeController();
-        _timeController.Init(_entityController, _gameData.DefaultTimescale);
+        _entityController = CreateEntityController();
+        _mapController = CreateMapController();
 
-        _lootController = new LootController();
-        _eventLog = new GameEventLog();
-        _aiController = new AIController();
-        _monsterCreator = new MonsterCreator();
-
-        _explosionItems = new List<GameObject>();
         _result = GameResult.None;
+        _loading = false;
 
-        InitializePlayContexts();
-        InitializePlayContextsData();
-    }
+        InitPlayStates();
+        InitPlayStateData();
 
-    void InitializePlayContexts()
-    {
-        _playContexts = new Dictionary<PlayContext, IPlayContext>();
-        _playContexts[PlayContext.Action] = new ActionPhaseContext();
-    }
-
-    void InitializePlayContextsData()
-    {
-        _playContextData = new Dictionary<PlayContext, BaseContextData>();
-
-        ActionPhaseData actionCtxtData = new ActionPhaseData();
-        actionCtxtData.input = _input;
-        actionCtxtData.BumpingWallsWillSpendTurn = _gameData.BumpingWallsWillSpendTurn;
-        actionCtxtData.Log = _eventLog;
-        _playContextData[PlayContext.Action] = actionCtxtData;
+        ExtendedInit();
     }
 
     void Start()
     {
-        _eventLog.Init();
-
         StartGame();
     }
 
+    protected virtual BaseInputController CreateInputController()
+    {
+        return new BaseInputController();
+    }
+
+    protected abstract IMapController CreateMapController();
+    protected abstract BaseGameEvents CreateGameEvents();
+
+    protected virtual IEntityController CreateEntityController()
+    {
+        return new EntityController();
+    }
+
+    private void InitPlayStates()
+    {
+        _playStates = new Dictionary<int, IPlayState>();
+        _playStates[PlayStates.Action] = new PlayerActionState();
+        _playStates[PlayStates.GameOver] = new GameOverState();
+        InitExtendedPlayStates();
+    }
+
+    protected virtual void InitExtendedPlayStates()
+    {}
+
+    protected virtual void ExtendedInit()
+    {
+
+    }
+
+    private void InitPlayStateData()
+    {
+        _playContextData = new Dictionary<int, PlayStateContext>();
+
+        _playContextData[PlayStates.Action] = new PlayerActionStateContext
+        {
+            Input = _input,
+            BumpingWallsWillSpendTurn = _gameData.BumpingWallsWillSpendTurn,
+            EntityController = _entityController,
+            Map = _mapController
+        };
+        _playContextData[PlayStates.GameOver] = new GameOverStateContext
+        {
+            Input = _input,
+            Controller = this
+        };
+        InitExtendedPlayStates();
+    }
+
+
     void ResetGame()
     {
-        _aiController.Cleanup();
-
-        _entityController.OnBombExploded -= BombExploded;
-        _entityController.OnBombSpawned -= BombSpawned;
-        _entityController.OnBombExploded -= _map.BombExploded;
-        _entityController.OnPlayerKilled -= PlayerKilled;
+        UnRegisterEntityEvents();
 
         _cameraController.Cleanup();
-
-        _hud.Cleanup();
-        Destroy(_hud.gameObject);
-
-        foreach(var explosion in _explosionItems)
-        {
-            Destroy(explosion);
-        }
-        _explosionItems.Clear();
-
-        _map.Cleanup();
-        GameObject.Destroy(_map.gameObject);
-        _map = null;
-
-        _paintMap.Cleanup();
-        GameObject.Destroy(_paintMap.gameObject);
-        _paintMap = null;
-
+        _mapController.Cleanup();
         _entityController.Cleanup();
-
-        _lootController.Cleanup();
-
         _timeController.Cleanup();
-    }
-
-    private void BombSpawned(Bomb bomb)
-    {
-        //BombActionEvent bombEvt = new BombActionEvent(_turns, _elapsedUnits);
-        //bombEvt.SetSpawned(bomb);
-        //_eventLog.AddEvent(bombEvt);
-    }
-
-    private void BombExploded(Bomb bomb, List<Vector2Int> coords, BaseEntity triggerEntity)
-    {
-        //BombActionEvent bombEvt = new BombActionEvent(_turns, _elapsedUnits);
-        //if (triggerEntity == null)
-        //{
-        //    bombEvt.SetTimedOut(bomb);
-        //}
-        //else if (triggerEntity is Bomb)
-        //{
-        //    bombEvt.SetChainExplosion(bomb, ((Bomb)triggerEntity));
-        //}
-        //_eventLog.AddEvent(bombEvt);
-
-        foreach (var coord in coords)
-        {
-            var explosion = Instantiate(bomb.ExplosionPrefab);
-            explosion.transform.position = _map.WorldFromCoords(coord);
-            _explosionItems.Add(explosion);
-            StartCoroutine(DelayedKillExplosion(explosion, 0.25f));
-        }
-    }
-
-    private IEnumerator DelayedKillExplosion(GameObject explosion, float delay)
-    {
-        yield return new WaitForSeconds(delay);
-        _explosionItems.Remove(explosion);
-        Destroy(explosion);
-    }
-
-    private void PlayerKilled()
-    {
-        UnRegisterEntityEvents();
-        _result = GameResult.Lost;
-        GameFinishedEvent evt = new GameFinishedEvent(_timeController.Turns, _timeController.TimeUnits, GameResult.Lost);
-        _eventLog.EndSession(evt);
-
-        StartCoroutine(DelayedPurge(0.25f));
     }
 
     IEnumerator DelayedPurge(float delay)
@@ -183,214 +131,66 @@ public class GameController : MonoBehaviour
         yield return new WaitForSeconds(delay);
         _entityController.PurgeEntities();
     }
+
     void StartGame()
     {
         _inputDelay = _gameData.InputDelay;
-        _input.Init(_inputDelay);
+        _input.Init(_gameData.InputData, _inputDelay);
 
-        _map = Instantiate<FairyBombMap>(_mapPrefab);
-        _map.InitFromData(_gameData.MapData, _eventLog);
+        _mapController.Init(_gameData.MapData);
 
-        _paintMap = Instantiate<PaintMap>(_paintMapPrefab);
-        _timeController.AddScheduledEntity(_paintMap);
-        
-        _lootController.Init(_lootItemData, _map, _entityController, _eventLog);
+        _entityController.Init(_mapController, _gameData.EntityCreationData);        
 
-        _entityController.Init(_map, _paintMap, _gameData.EntityCreationData);
-        _entityController.CreatePlayer(_gameData.PlayerData, _map.PlayerStart);
-        _entityController.OnPlayerKilled += PlayerKilled;
-        _entityController.OnBombExploded += BombExploded;
-        _entityController.OnBombSpawned += BombSpawned;
-        _entityController.OnBombExploded += _map.BombExploded;
+        _cameraController.Init(_mapController.WorldBounds, _entityController.Player.transform);
 
-        _aiController.Init(_entityController, _map, _eventLog);
-
-        // Inic camera
-        Rect mapBounds = _map.GetBounds();
-        _cameraController.SetBounds(mapBounds);
-        _cameraController.SetTarget(_entityController.Player.transform);
-        //_cameraController.SetFixed(new Vector3(mapBounds.width/2, mapBounds.height/2, _cameraController.transform.position.z));
-
-        // Init default context
-        var contextData = ((ActionPhaseData)_playContextData[PlayContext.Action]);
-        contextData.EntityController = _entityController;
-        contextData.Player = _entityController.Player;
-        contextData.Map = _map;
-        contextData.LootData = _lootItemData;
-
-        // le hud
-        _hud = Instantiate<HUD>(_hudPrefab);
-        _hud.Init(_eventLog, _entityController.Player, () => _timeController.Turns, () => _timeController.TimeUnits, _uiCamera);
 
         // populate the level
-        _monsterCreator.Init(_entityController, _aiController, _map, _eventLog);
-        _monsterCreator.AddInitialMonsters(_map.MonsterSpawns);
-
-        _lootController.LoadLootSpawns(_map.LootSpawns);
-
-        _entityController.AddNewEntities();
+        PopulateLevel();
 
         // Init game control / time vars
+        _timeController.Init(_entityController, _gameData.DefaultTimescale);
         _timeController.Start();
+
+        _playContext = PlayStates.Action;
+        _playContextData[_playContext].Refresh(this);
+
         _result = GameResult.Running;
-
-        _paintMap.Init(_map, _entityController, _eventLog);
-
-        // Starting event!
-        var setupEvt = new GameSetupEvent();
-        setupEvt.MapSize = new Vector2Int(_map.Height, _map.Width);
-        setupEvt.MapTiles = _map.AllTileValues;
-        setupEvt.PlayerCoords = _map.PlayerStart;
-        setupEvt.HP = _entityController.Player.HP;
-        setupEvt.MaxHP = _entityController.Player.MaxHP;
-        _eventLog.StartSession(setupEvt);
-        _paintMap.MapLoaded();
-
+        
         RegisterEntityEvents();
+    }
+
+    protected virtual void PopulateLevel()
+    {
+        // Game specific map logic?
     }
 
     void RegisterEntityEvents()
     {
-        // Camera, event log?
-        Player player = _entityController.Player;
-        if(_cameraController.CameraType == CameraType.Tracking)
-            player.OnEntityMoved += _cameraController.PlayerMoved;
 
-        _entityController.OnPlayerMonsterCollision += OnPlayerMonsterCollision;
-        _entityController.OnEntityHealth += OnEntityHealth;
-
-        player.BomberTrait.OnUsedItem += _hud.UsedItem;
-
-        player.BomberTrait.OnAddedToInventory += AddedToInventory;
-        player.BomberTrait.OnDroppedItem += DroppedItem;
-        player.BomberTrait.OnItemDepleted += DepletedItem;
-        player.BomberTrait.OnSelectedItem += SelectedItem;
-
-        player.PaintableTrait.OnAppliedPaint += _hud.AppliedPaint;
-        player.PaintableTrait.OnRemovedPaint += _hud.RemovedPaint;
-
-        _input.OnLayoutChanged += _hud.OnInputLayoutChanged;
-    }
-
-    private void OnEntityHealth(BaseEntity e, int dmg, bool explosion, bool poison, bool heal, bool collision)
-    {
-        EntityHealthEvent evt = new EntityHealthEvent(_timeController.Turns, _timeController.TimeUnits);
-        evt.name = e.Name;
-        evt.isPlayer = e is Player;
-        evt.isCollision = collision;
-        evt.isExplosion = explosion;
-        evt.isPoison = poison;
-        evt.isHeal = heal;
-        evt.dmg = dmg;
-        _eventLog.AddEvent(evt);
-    }
-
-    private void SelectedItem(int idx, BombInventoryEntry entry, IBomberEntity entity)
-    {
-        PlayerItemEvent evt = new PlayerItemEvent(_timeController.Turns, _timeController.TimeUnits);
-        evt.isAdded = false;
-        evt.isDepleted = false;
-        evt.isSelected = true;
-        evt.isDropped = false;
-        evt.item = entry.Bomb;
-        _eventLog.AddEvent(evt);
-
-        _hud.SelectedItem(idx, entry, entity);
-    }
-
-    private void DepletedItem(int idx, BombInventoryEntry entry, IBomberEntity entity)
-    {
-        PlayerItemEvent evt = new PlayerItemEvent(_timeController.Turns, _timeController.TimeUnits);
-        evt.isAdded = false;
-        evt.isDepleted = true;
-        evt.isSelected = false;
-        evt.isDropped = false;
-        evt.item = entry.Bomb;
-        _eventLog.AddEvent(evt);
-
-        _hud.DepletedItem(idx, entry, entity);
-    }
-
-    private void DroppedItem(int idx, BombInventoryEntry entry, IBomberEntity entity)
-    {
-        PlayerItemEvent evt = new PlayerItemEvent(_timeController.Turns, _timeController.TimeUnits);
-        evt.isAdded = false;
-        evt.isDepleted = false;
-        evt.isSelected = false;
-        evt.isDropped = true;
-        evt.item = entry.Bomb;
-        _eventLog.AddEvent(evt);
-
-        _hud.DroppedItem(idx, entry, entity);
-    }
-
-    private void AddedToInventory(int idx, BombInventoryEntry entry, IBomberEntity entity)
-    {
-        PlayerItemEvent evt = new PlayerItemEvent(_timeController.Turns, _timeController.TimeUnits);
-        evt.isAdded = true;
-        evt.isDepleted = false;
-        evt.isSelected = false;
-        evt.isDropped = false;
-        evt.item = entry.Bomb;
-        _eventLog.AddEvent(evt);
-
-        _hud.AddedToInventory(idx, entry, entity);
-    }
-
-    private void OnPlayerMonsterCollision(Player p, Monster m, int playerDmg, int monsterDmg)
-    {
-        PlayerMonsterCollisionEvent evt = new PlayerMonsterCollisionEvent(_timeController.Turns, _timeController.TimeUnits);
-        evt.PlayerName = p.name;
-        evt.MonsterName = m.name;
-        evt.PlayerDamageReceived = playerDmg;
-        evt.MonsterDamageReceived = monsterDmg;
-        _eventLog.AddEvent(evt);
     }
 
     void UnRegisterEntityEvents()
     {
-        Player player = _entityController.Player;
+ 
+    }
 
-        _entityController.Player.OnEntityMoved -= _cameraController.PlayerMoved;
-        _entityController.OnPlayerMonsterCollision -= OnPlayerMonsterCollision;
-        _entityController.OnEntityHealth -= OnEntityHealth;
-
-        player.BomberTrait.OnUsedItem -= _hud.UsedItem;
-
-        player.BomberTrait.OnAddedToInventory -= AddedToInventory;
-        player.BomberTrait.OnDroppedItem -= DroppedItem;
-        player.BomberTrait.OnItemDepleted -= DepletedItem;
-        player.BomberTrait.OnSelectedItem -= SelectedItem;
-
-        player.PaintableTrait.OnAppliedPaint -= _hud.AppliedPaint;
-        player.PaintableTrait.OnRemovedPaint -= _hud.RemovedPaint;
-
-        _input.OnLayoutChanged -= _hud.OnInputLayoutChanged;
+    public void Restart()
+    {
+        StartCoroutine(RestartGame());
     }
     
     // Update is called once per frame
     void Update()
     {
-        if (_result != GameResult.Running)
+        if(_loading)
         {
-            if (_input != null && _input.Any)
-            {
-                StartCoroutine(RestartGame());
-            }
             return;
         }
 
-        if(Input.GetKeyDown(KeyCode.L))
-        {
-            Debug.Log(_eventLog.Flush());
-        }
-
         _input.Read();
-        bool timeWillPass;
-
         _playContextData[_playContext].Refresh(this);
-        
-        _playContext = _playContexts[_playContext].Update(_playContextData[_playContext], out timeWillPass);
+        int nextPlayState = _playStates[_playContext].Update(_playContextData[_playContext], out var timeWillPass);
+        _playContext = nextPlayState;
 
         if (timeWillPass)
         {
@@ -406,22 +206,17 @@ public class GameController : MonoBehaviour
         }
     }
 
-    GameResult EvaluateVictory()
+    protected virtual GameResult EvaluateVictory()
     {
-        if (_map.IsGoal(_entityController.Player.Coords))
-        {
-            // TODO: Won event
-            GameFinishedEvent evt = new GameFinishedEvent(_timeController.Turns, _timeController.TimeUnits, GameResult.Won);
-            _eventLog.EndSession(evt);
-            return GameResult.Won;
-        }
         return GameResult.Running;
     }
 
     private IEnumerator RestartGame()
     {
+        _loading = true;
         ResetGame();
         yield return new WaitForSeconds(0.1f);
         StartGame(); // TODO: Change level or smthing.
+        _loading = false;
     }
 }

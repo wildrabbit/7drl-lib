@@ -13,8 +13,8 @@ public abstract class BaseMapGeneratorData : ScriptableObject
     public abstract GeneratorType GeneratorType { get; }
     public abstract Vector2Int  MapSize { get; }
 
-    public TileType WallTile;
-    public TileType GroundTile;
+    public int WallTile;
+    public int GroundTile;
 
     public bool OriginIsTopLeft;
 }

@@ -3,5 +3,5 @@ using System.Collections;
 
 public interface IScheduledEntity
 {
-    void AddTime(float timeUnits, ref PlayContext playContext);
+    void AddTime(float timeUnits, ref int playState);
 }

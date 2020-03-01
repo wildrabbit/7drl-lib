@@ -13,10 +13,10 @@ public class MonsterCreator
 {
     private IEntityController _entityController;
     private AIController _aiController;
-    private FairyBombMap _map;
+    private IMapController _map;
     private GameEventLog _log;
 
-    public void Init(IEntityController entityController, AIController aiController, FairyBombMap map, GameEventLog log)
+    public void Init(IEntityController entityController, AIController aiController, IMapController map, GameEventLog log)
     {
         _aiController = aiController;
         _entityController = entityController;

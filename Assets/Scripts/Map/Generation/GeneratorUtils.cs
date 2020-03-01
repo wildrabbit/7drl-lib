@@ -1,15 +1,12 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 public static class GeneratorUtils
 {
-    public static void ConvertGrid(TileType[,] multi, out TileType[] single)
+    public static void ConvertGrid(int[,] multi, out int[] single)
     {
         int rows = multi.GetLength(0);
         int cols = multi.GetLength(1);
-        single = new TileType[rows * cols];
+        single = new int[rows * cols];
         for(int row = 0; row < rows; ++row)
         {
             for(int col = 0; col < cols; ++col)
@@ -19,7 +16,7 @@ public static class GeneratorUtils
         }
     }
 
-    public static void DrawRoom(Vector2Int botLeft, Vector2Int size, TileType groundTile, ref TileType[,] grid)
+    public static void DrawRoom(Vector2Int botLeft, Vector2Int size, int groundTile, ref int[,] grid)
     {
         for(int row = botLeft.x; row < botLeft.x + size.x; ++row)
         {
@@ -35,7 +32,7 @@ public static class GeneratorUtils
         }
     }
 
-    public static void DrawCorridor(Vector2Int from, Vector2Int to, TileType groundTile, ref TileType[,] grid)
+    public static void DrawCorridor(Vector2Int from, Vector2Int to, int groundTile, ref int[,] grid)
     {
         // Straight for now:
         bool horizontal = from.x == to.x;
@@ -55,7 +52,7 @@ public static class GeneratorUtils
 
     }
 
-    private static void DrawVerticalCorridor(int startRow, int endRow, int col, TileType groundTile, ref TileType[,] grid)
+    private static void DrawVerticalCorridor(int startRow, int endRow, int col, int groundTile, ref int[,] grid)
     {
         for(int row = startRow; row <= endRow; ++row)
         {
@@ -63,7 +60,7 @@ public static class GeneratorUtils
         }
     }
 
-    private static void DrawHorizontalCorridor(int startCol, int endCol, int row, TileType groundTile, ref TileType[,] grid)
+    private static void DrawHorizontalCorridor(int startCol, int endCol, int row, int groundTile, ref int[,] grid)
     {
         for(int col = startCol; col <= endCol; ++col)
         {
@@ -71,7 +68,7 @@ public static class GeneratorUtils
         }
     }
 
-    public static void PlaceWalls(TileType wallTile, TileType groundTile, ref TileType[,] grid)
+    public static void PlaceWalls(int wallTile, int groundTile, int noTile, ref int[,] grid)
     {
         int rows = grid.GetLength(0);
         int cols = grid.GetLength(1);
@@ -86,7 +83,7 @@ public static class GeneratorUtils
         {
             for(int col = 0; col < cols; ++col)
             {
-                if (grid[row, col] != TileType.None) continue;
+                if (grid[row, col] != noTile) continue;
                 for (int i = 0; i < offsets.Length; ++i)
                 {
                     Vector2Int refCoord = new Vector2Int(row + offsets[i].x, col + offsets[i].y);

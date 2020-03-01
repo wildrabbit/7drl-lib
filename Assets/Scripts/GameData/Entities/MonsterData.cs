@@ -12,12 +12,12 @@ public enum MonsterAITemplate
 // TODO: Put ai template params in ai template data??
 
 
-[CreateAssetMenu(fileName = "New MonsterData", menuName = "FAIRY BOMB/Monster")]
+[CreateAssetMenu(fileName = "New MonsterData", menuName = "7DRL_Lib/Monster")]
 public class MonsterData: BaseEntityData
 {
     public float ThinkingDelay;
     public HPTraitData HPData;
-    public MovingEntityData MovingData;
+    public BaseMovingTraitData MovingTraitData;
     public MonsterState InitialState;
 
     public int WanderToIdleMinTurns;
@@ -29,9 +29,6 @@ public class MonsterData: BaseEntityData
     public bool IsMelee;
     public int MeleeDamage;
 
-    public bool IsBomber;
-    public BomberData BomberData;
-
     public int VisibilityRange; // Wander -> Chase
     public float EscapeHPRatio;
     public int EscapeSafeDistance;
@@ -39,8 +36,7 @@ public class MonsterData: BaseEntityData
     public int PlayerCollisionDmg;
 
     public float PathUpdateDelay;
-    // TODO: Distances, visibility
-
+    
     [Header("loot stuff")]
     public LootInfo LootInfoOnDeath;
     public int XPOnDeath;

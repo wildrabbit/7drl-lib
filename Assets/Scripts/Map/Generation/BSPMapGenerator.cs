@@ -12,10 +12,10 @@ public enum PatternMatchType
 
 public class PatternSelection: IComparable<PatternSelection>
 {
-    public TileType[,] pattern;
+    public int[,] pattern;
     public PatternMatchType matchType;
 
-    public PatternSelection(TileType[,] array, PatternMatchType match)
+    public PatternSelection(int[,] array, PatternMatchType match)
     {
         pattern = array;
         matchType = match;
@@ -31,14 +31,12 @@ public class BSPContext: BaseMapContext
 {
     public BSPGeneratorData BSPData => ((BSPGeneratorData)GeneratorData);
     public Vector2Int PlayerStart;
-    public List<MonsterSpawn> MonsterSpawns;
-    public List<LootSpawn> LootSpawns;
+    public BSPNode Tree;
 }
 
 
 public class BSPMapGenerator : IMapGenerator
 {
-    BSPNode _tree;
     BSPContext _context;
 
     BSPGeneratorData _bspGenData;
@@ -53,7 +51,7 @@ public class BSPMapGenerator : IMapGenerator
         
     }
 
-    public void GenerateMap(ref TileType[] map, BaseMapContext mapGenContext)
+    public void GenerateMap(ref int[] map, BaseMapContext mapGenContext)
     {
         _context = (BSPContext)mapGenContext;
         _bspGenData = (BSPGeneratorData)_context.GeneratorData;
@@ -69,96 +67,17 @@ public class BSPMapGenerator : IMapGenerator
         }
 
 
-        TileType[,] mapAux = new TileType[_bspGenData.MapSize.x, _bspGenData.MapSize.y];
-        mapAux.Fill<TileType>(TileType.None);
+        int[,] mapAux = new int[_bspGenData.MapSize.x, _bspGenData.MapSize.y];
+        mapAux.Fill<int>(mapGenContext.noTile);
 
-        _tree = new BSPNode();
-        _tree.context = _context;
-        _tree.left = _tree.right = null;
-        _tree.area = new BSPRect(1, 1, _bspGenData.MapSize.x - 2, _bspGenData.MapSize.y - 2);
+        var tree = new BSPNode();
+        _context.Tree = tree;
+        tree.context = _context;
+        tree.left = tree.right = null;
+        tree.area = new BSPRect(1, 1, _bspGenData.MapSize.x - 2, _bspGenData.MapSize.y - 2);
 
         GenerateRooms(ref mapAux);
-        GenerateMonsters(mapAux);
-        GenerateLoot(mapAux);
-
         GeneratorUtils.ConvertGrid(mapAux, out map);
-    }
-
-    private void GenerateLoot(TileType[,] map)
-    {
-        _context.LootSpawns = new List<LootSpawn>();
-        int lootCount = 0;
-
-        Predicate<Vector2Int> validLootPos = (pos) =>
-        {
-            return _context.PlayerStart != pos && map[pos.x, pos.y] == _bspGenData.GroundTile;
-        };
-
-        foreach (var r in _rooms)
-        {
-            float lootRoll = URandom.value;
-            if (lootRoll <= _bspGenData.BombSpawnChancePerRoom)
-            {
-                int lootLeft = _bspGenData.MaxLootItems - lootCount;
-                int numItems = URandom.Range(_bspGenData.MinLootPerRoom, _bspGenData.MaxLootPerRoom);
-
-                for (int i = 0; i < numItems; ++i)
-                {
-                    BombData itemType = _bspGenData.BombPool[URandom.Range(0, _bspGenData.BombPool.Count)];
-                    Vector2Int lootCoords = GetRandomCoordsInRoom(r, validLootPos, 10);
-                    if (lootCoords.x >= 0 && lootCoords.y >= 0)
-                    {
-                        LootSpawn spawn = new LootSpawn();
-                        spawn.item = itemType;
-                        spawn.coords = lootCoords;
-                        spawn.amount = 1;
-                        _context.LootSpawns.Add(spawn);
-                        lootCount++;
-                    }
-                }
-            }
-
-            if (lootCount >= _bspGenData.MaxLootItems) ;
-                break;
-        }
-    }
-
-    void GenerateMonsters(TileType[,] map)
-    {
-        _context.MonsterSpawns = new List<MonsterSpawn>();
-        int monsterCount = 0;
-
-        Predicate<Vector2Int> validMonsterPos = (pos) =>
-        {
-            return _context.PlayerStart != pos && map[pos.x, pos.y] == _bspGenData.GroundTile;
-        };
-
-        foreach (var r in _rooms)
-        {
-            float monsterRoll = URandom.value;
-            if(monsterRoll <= _bspGenData.MonsterSpawnChance)
-            {
-                int monstersLeft = _bspGenData.MaxTotalMonsters - monsterCount;
-                int numMonsters = Mathf.Min(monstersLeft, URandom.Range(_bspGenData.MinMonstersPerRoom, _bspGenData.MaxMonstersPerRoom + 1));
-                for(int i = 0; i < numMonsters; ++i)
-                {
-                    
-                    MonsterData monsterType = _bspGenData.MonsterPool[URandom.Range(0, _bspGenData.MonsterPool.Count)];
-                    Vector2Int monsterCoords = GetRandomCoordsInRoom(r, validMonsterPos, 10);
-                    if(monsterCoords.x >= 0 && monsterCoords.y >= 0)
-                    {
-                        MonsterSpawn spawn = new MonsterSpawn();
-                        spawn.Data = monsterType;
-                        spawn.Coords = monsterCoords;
-                        _context.MonsterSpawns.Add(spawn);
-                        monsterCount++;
-                    }
-                }
-            }
-
-            if (monsterCount >= _bspGenData.MaxTotalMonsters)
-                break;
-        }
     }
 
     public int CompareSelections(PatternSelection one, PatternSelection other)
@@ -166,7 +85,7 @@ public class BSPMapGenerator : IMapGenerator
         return one.CompareTo(other);
     }
 
-    public List<TileType[,]> GetPatternCandidates(BSPRect rect)
+    public List<int[,]> GetPatternCandidates(BSPRect rect)
     {
         List<PatternSelection> selection = new List<PatternSelection>();
         foreach(var pattern in _bspGenData.PatternsList)
@@ -181,7 +100,7 @@ public class BSPMapGenerator : IMapGenerator
         return selection.ConvertAll(x => x.pattern);
     }
 
-    PatternMatchType PatternFitsInRoom(TileType[,] woodPattern, BSPRect roomRect)
+    PatternMatchType PatternFitsInRoom(int[,] woodPattern, BSPRect roomRect)
     {
         int patternHeight = woodPattern.GetLength(0);
         int patternWidth = woodPattern.GetLength(1);
@@ -197,7 +116,7 @@ public class BSPMapGenerator : IMapGenerator
         return PatternMatchType.None;
     }
 
-    public void ApplyPattern(BSPRect rect, TileType[,] pattern, ref TileType[,] map)
+    public void ApplyPattern(BSPRect rect, int noTile, int[,] pattern, ref int[,] map)
     {
         int height = pattern.GetLength(0);
         int width = pattern.GetLength(1);
@@ -209,7 +128,7 @@ public class BSPMapGenerator : IMapGenerator
         {
             for(var c = 0; c < width; ++c)
             {
-                if(pattern[r,c] != TileType.None && map[row + r, col + c] != TileType.Goal && (_context.PlayerStart.x != row + r || _context.PlayerStart.y != col + c))
+                if(pattern[r,c] != noTile && (_context.PlayerStart.x != row + r || _context.PlayerStart.y != col + c))
                 {
                     map[row + r, col + c] = pattern[r, c];
                 }
@@ -217,13 +136,14 @@ public class BSPMapGenerator : IMapGenerator
         }
     }
 
-    void GenerateRooms(ref TileType[,] mapAux)
+    void GenerateRooms(ref int[,] mapAux)
     {
         _rooms = new List<BSPRect>();
 
         List<BSPNode> leaves = new List<BSPNode>();
-        _tree.Split();
-        _tree.GetLeaves(ref leaves);
+
+        _context.Tree.Split();
+        _context.Tree.GetLeaves(ref leaves);
         foreach (var leaf in leaves)
         {
             bool skipRoom = URandom.value < _bspGenData.EmptyRoomChance;
@@ -239,27 +159,13 @@ public class BSPMapGenerator : IMapGenerator
             _rooms.Add(leaf.roomRect);
             GeneratorUtils.DrawRoom(new Vector2Int(row, col), new Vector2Int(height, width), _bspGenData.GroundTile, ref mapAux);
         }
-        Connect(_tree, ref mapAux);
-        GeneratorUtils.PlaceWalls(_bspGenData.WallTile, _bspGenData.GroundTile, ref mapAux);
+        Connect(_context.Tree, ref mapAux);
+        GeneratorUtils.PlaceWalls(_bspGenData.WallTile, _bspGenData.GroundTile, _context.noTile, ref mapAux);
 
         // Player start
         int randomPlayerStart = URandom.Range(0, _rooms.Count);
         BSPRect playerStart = _rooms[randomPlayerStart];
         _context.PlayerStart = GetRandomCoordsInRoom(playerStart);
-
-        // Goal
-        int goalIdx;
-        do
-        {
-            goalIdx = URandom.Range(0, _rooms.Count);
-        } while (goalIdx == randomPlayerStart);
-
-        // TODO: Locate goal somewhere better
-        BSPRect goalRoom = _rooms[goalIdx];
-        Vector2Int goalCoords = GetRandomCoordsInRoom(goalRoom);
-
-        mapAux[goalCoords.x, goalCoords.y] = TileType.Goal;
-
 
         // Place patterns:
         var patternsList = _bspGenData.PatternsList;
@@ -271,7 +177,7 @@ public class BSPMapGenerator : IMapGenerator
                 var candidates = GetPatternCandidates(r);
                 if(candidates != null && candidates.Count > 0)
                 {
-                    ApplyPattern(r, candidates[URandom.Range(0, candidates.Count)], ref mapAux);
+                    ApplyPattern(r, _context.noTile, candidates[URandom.Range(0, candidates.Count)], ref mapAux);
                 }
             }
         }
@@ -299,7 +205,7 @@ public class BSPMapGenerator : IMapGenerator
         return new Vector2Int(-1, -1);
     }
     
-    public void Connect(BSPNode tree, ref TileType[,] mapAux)
+    public void Connect(BSPNode tree, ref int[,] mapAux)
     {
         if(tree.left == null && tree.right == null)
         {
@@ -327,7 +233,7 @@ public class BSPMapGenerator : IMapGenerator
         }
     }
 
-    public void ConnectRooms(BSPRect leftRoom, BSPRect rightRoom, ref TileType[,] mapAux)
+    public void ConnectRooms(BSPRect leftRoom, BSPRect rightRoom, ref int[,] mapAux)
     {
         int column1 = URandom.Range(leftRoom.Col, leftRoom.Col + leftRoom.Width);
         int row1 = URandom.Range(leftRoom.Row, leftRoom.Row + leftRoom.Height);
@@ -389,6 +295,6 @@ public class BSPMapGenerator : IMapGenerator
 
     public BSPNode GetRoomNode()
     {
-        return _tree;
+        return _context.Tree;
     }
 }

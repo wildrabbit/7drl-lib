@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-[CreateAssetMenu(fileName ="New BSPGeneratorData", menuName = "FAIRY BOMB/MapGen/BSP Generator Data")]
+[CreateAssetMenu(fileName ="New BSPGeneratorData", menuName = "7DRL_Lib/MapGen/BSP Generator Data")]
 public class BSPGeneratorData: BaseMapGeneratorData
 {
     public override GeneratorType GeneratorType => GeneratorType.BSP;
@@ -18,7 +18,7 @@ public class BSPGeneratorData: BaseMapGeneratorData
 
     [Header("Patterns")]
     public float PatternRoomsChance;
-    public List<TileType[,]> PatternsList
+    public List<int[,]> PatternsList
     {
         get
         {
@@ -29,23 +29,9 @@ public class BSPGeneratorData: BaseMapGeneratorData
             return _patternsList;
         }
     }
-    List<TileType[,]> _patternsList;
+    List<int[,]> _patternsList;
 
     public TextAsset PatternsFile;
-
-    [Header("Monster spawning data")]
-    public List<MonsterData> MonsterPool;
-    public float MonsterSpawnChance;
-    public int MinMonstersPerRoom;
-    public int MaxMonstersPerRoom;
-    public int MaxTotalMonsters;
-
-    [Header("Initial loot data")]
-    public List<BombData> BombPool;
-    public float BombSpawnChancePerRoom;
-    public int MaxLootItems;
-    public int MinLootPerRoom;
-    public int MaxLootPerRoom;
 
     [Header("BSP Control data")]
     public float HorizontalSplitChance; // Vertical == 1 - horz :P
@@ -62,7 +48,7 @@ public class BSPGeneratorData: BaseMapGeneratorData
 
     public bool BuildPatternsList()
     {
-        _patternsList = new List<TileType[,]>();
+        _patternsList = new List<int[,]>();
 
         string[] lines = PatternsFile.text.Split('\n');
         if (lines.Length == 0)
@@ -89,7 +75,7 @@ public class BSPGeneratorData: BaseMapGeneratorData
             }
 
             Vector2Int patternSize = new Vector2Int(Int32.Parse(dims[0]), Int32.Parse(dims[1]));
-            TileType[,] pattern = new TileType[patternSize.x, patternSize.y];
+            int[,] pattern = new int[patternSize.x, patternSize.y];
             _patternsList.Add(pattern);
             if (nextLine + patternSize.x >= lines.Length)
             {
@@ -108,7 +94,7 @@ public class BSPGeneratorData: BaseMapGeneratorData
                 }
                 for (int j = 0; j < tilesRow.Length; ++j)
                 {
-                    pattern[offset, j] = (TileType)Int32.Parse(tilesRow[j]);
+                    pattern[offset, j] = Int32.Parse(tilesRow[j]);
                 }
             }
             nextLine += patternSize.x;

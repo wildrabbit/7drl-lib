@@ -25,12 +25,6 @@ public class MeleeAttackAction: BaseMonsterAction
     // TODO: Melee weapon, stuff
 }
 
-public class PlaceBombAction: BaseMonsterAction
-{
-    public BombData BombData;
-    public Vector2Int BombCoords;
-}
-
 public class MonsterDependencies: BaseEntityDependencies
 {
     public AIController AIController;
@@ -47,7 +41,7 @@ public enum MonsterState
 }
 
 
-public class Monster : BaseEntity, IBattleEntity, IBomberEntity, IHealthTrackingEntity, IPaintableEntity
+public class Monster : BaseEntity, IBattleEntity, IHealthTrackingEntity
 {
     public SpriteRenderer ViewPrefab;
 
@@ -55,19 +49,9 @@ public class Monster : BaseEntity, IBattleEntity, IBomberEntity, IHealthTracking
     public int MaxHP => _hpTrait.MaxHP;
 
     public MonsterState CurrentState => _currentState;
-    public BomberTrait BomberTrait => _bomberTrait;
-    public BombWalkabilityType BombWalkability => _walkOverBombs;
-    public LootInfo LootInfo => _monsterData.LootInfoOnDeath;
+
 
     public bool IsMelee => _monsterData.IsMelee;
-
-    public bool IsImmuneTo(Bomb bomb)
-    {
-        bool isOwnBomb = (bomb.Owner == this);
-        return (_bombImmunity == BombImmunityType.AnyBombs || (_bombImmunity == BombImmunityType.OwnBombs && isOwnBomb));            
-    }
-
-    public bool IsBomber => _monsterData.IsBomber;
     
     public int TurnsInSameState => _turnsInSameState;
     public int TurnLimit => _turnLimit;
@@ -85,25 +69,20 @@ public class Monster : BaseEntity, IBattleEntity, IBomberEntity, IHealthTracking
 
     string IBattleEntity.Name => name;
 
-    public BombData SelectedBomb
-    {
-        get => _bomberTrait.SelectedBomb;
-        set { }
-    }
+
 
     public HPTrait HPTrait => _hpTrait;
-    public PaintableTrait PaintableTrait => _paintableTrait;
+    public BaseMovingTrait MovingTrait => _movingTrait;
+
 
     MonsterData _monsterData; // Should we expose it?
 
     HPTrait _hpTrait;
-    BomberTrait _bomberTrait;
-    PaintableTrait _paintableTrait;
+    BaseMovingTrait _movingTrait;
+
 
     MonsterState _currentState;
 
-    BombImmunityType _bombImmunity;
-    BombWalkabilityType _walkOverBombs;
 
     float _elapsedNextAction;
 
@@ -122,10 +101,6 @@ public class Monster : BaseEntity, IBattleEntity, IBomberEntity, IHealthTracking
         {
             return 1;
         }
-        else if (_monsterData.IsBomber)
-        {
-            return _bomberTrait.SelectedBomb.Radius;
-        }
         return 0; // attack distance == 0? 
     }
 
@@ -141,17 +116,13 @@ public class Monster : BaseEntity, IBattleEntity, IBomberEntity, IHealthTracking
         _hpTrait = new HPTrait();
         _hpTrait.Init(this, _monsterData.HPData);
 
-        _bomberTrait = new BomberTrait();
-        _bomberTrait.Init(this, _monsterData.BomberData);
-
-        _paintableTrait = new PaintableTrait();
-        _paintableTrait.Init(this, deps.PaintMap);
 
         _decisionDelay = _monsterData.ThinkingDelay;
         _elapsedNextAction = 0.0f;
         _elapsedPathUpdate = 0.0f;
-        _bombImmunity = _monsterData.MovingData.BombImmunity;
-        _walkOverBombs = _monsterData.MovingData.BombWalkability;
+
+        _movingTrait = _monsterData.MovingTraitData.CreateRuntimeTrait();
+        _movingTrait.Init(_monsterData.MovingTraitData);
 
         _turnsInSameState = 0;
         StateChanged(_monsterData.InitialState);
@@ -162,7 +133,7 @@ public class Monster : BaseEntity, IBattleEntity, IBomberEntity, IHealthTracking
         _aiController = aiController;
     }
 
-    public override void AddTime(float timeUnits, ref PlayContext playContext)
+    public override void AddTime(float timeUnits, ref int playContext)
     {
         _elapsedNextAction += timeUnits;
 
@@ -177,7 +148,6 @@ public class Monster : BaseEntity, IBattleEntity, IBomberEntity, IHealthTracking
                 if(action.NextCoords != Coords)
                 {
                     Coords = action.NextCoords;
-                    PaintableTrait.OwnerChangedPos(action.NextCoords);
                     if(_entityController.Player.Coords == Coords && _monsterData.PlayerCollisionDmg > 0)
                     {
                         int monsterDmg = PlayerCollided(_entityController.Player);
@@ -202,12 +172,6 @@ public class Monster : BaseEntity, IBattleEntity, IBomberEntity, IHealthTracking
                     IBattleEntity target = ((MeleeAttackAction)action).Target;
                     BattleActionResult results;
                     BattleUtils.SolveAttack(this, target, out results);
-                }
-                else if (action is PlaceBombAction)
-                {
-                    var bombAction = ((PlaceBombAction)action);
-                    Bomb bomb = _entityController.CreateBomb(bombAction.BombData, bombAction.BombCoords, this);
-                    // TODO: Track monster placing bomb
                 }
             }
 
@@ -253,34 +217,9 @@ public class Monster : BaseEntity, IBattleEntity, IBomberEntity, IHealthTracking
         _currentState = monsterState;
     }
 
-    public void OnBombExploded(Bomb bomb, List<Vector2Int> coords, BaseEntity triggerEntity)
-    {
-#pragma warning disable CS0252 // Involuntary reference comparison (What I DO want)
-        bool isOwnBomb = (bomb.Owner == this);
-#pragma warning restore CS0252
-
-        if (isOwnBomb)
-        {
-            _bomberTrait.RestoreBomb(bomb);
-        }
-
-        if(!IsImmuneTo(bomb) && coords.Contains(Coords))
-        {
-            _entityController.EntityHealthEvent(this, bomb.Damage, true, false, false, false);
-            TakeDamage(bomb.Damage);           
-        }
-    }
-
-
-    public override void OnAdded()
-    {
-        base.OnAdded();
-        _entityController.OnBombExploded += OnBombExploded;
-    }
 
     public override void OnDestroyed()
     {
-        _entityController.OnBombExploded -= OnBombExploded;
         _entityController.NotifyMonsterKilled(this);
     }
 
@@ -334,78 +273,20 @@ public class Monster : BaseEntity, IBattleEntity, IBomberEntity, IHealthTracking
         return _monsterData.PlayerCollisionDmg;
     }
 
-    public void AppliedPaint(PaintData data)
+    // TODO: Do we use this during the AI step??
+    public override bool TryResolveMoveIntoCoords(Vector2Int coords)
     {
+        if (!_movingTrait.EvaluateTile(_mapController.GetTileAt(coords)))
+        {
+            return false;
+        }
 
-    }
-    public void RemovedPaint(PaintData data)
-    {
-        switch (data.Effect)
+        List<BaseEntity> otherEntities = _entityController.GetEntitiesAt(coords);
+        foreach (var other in otherEntities)
         {
-            case PaintingEffect.Freeze:
-                {
-                    Frozen = false;
-                    break;
-                }
-            case PaintingEffect.Haste:
-                {
-                    ResetSpeedRate();
-                    break;
-                }
-            case PaintingEffect.Heal:
-                {
-                    break;
-                }
-            case PaintingEffect.Poison:
-                {
-                    break;
-                }
-            case PaintingEffect.Slow:
-                {
-                    ResetSpeedRate();
-                    break;
-                }
+            // Handle collision + entity actions!
         }
-    }
-    public float UpdatedPaint(PaintData paintData, float ticks)
-    {
-        switch (paintData.Effect)
-        {
-            case PaintingEffect.Freeze:
-                {
-                    bool wasFrozen = Frozen;
-                    Frozen = UnityEngine.Random.value <= paintData.FreezeChance;
-                    break;
-                }
-            case PaintingEffect.Haste:
-                {
-                    break;
-                }
-            case PaintingEffect.Heal:
-                {
-                    while (ticks >= paintData.TicksForHPChange)
-                    {
-                        ticks -= paintData.TicksForHPChange;
-                        HPTrait.Add(paintData.HPDelta);
-                        _entityController.EntityHealthEvent(this, paintData.HPDelta, false, true, false, false);
-                    }
-                    break;
-                }
-            case PaintingEffect.Poison:
-                {
-                    while (ticks >= paintData.TicksForHPChange)
-                    {
-                        ticks -= paintData.TicksForHPChange;
-                        _entityController.EntityHealthEvent(this, paintData.HPDelta, false, false, true, false);
-                        TakeDamage(paintData.HPDelta);
-                    }
-                    break;
-                }
-            case PaintingEffect.Slow:
-                {
-                    break;
-                }
-        }
-        return ticks;
+
+        return true;
     }
 }

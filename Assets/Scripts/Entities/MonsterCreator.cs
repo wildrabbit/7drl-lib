@@ -17,7 +17,6 @@ public class MonsterSpawnData
 
     public bool Scatter;
 
-    public bool Respawnable;
     public int MaxRespawns;
     public float RespawnDelayTimeUnits;
 
@@ -32,8 +31,8 @@ public class MonsterSpawn
     public float RespawnTimeElapsed;
     public int RespawnCount;
 
-    public bool Exhausted => SpawnData.Respawnable && SpawnData.MaxRespawns != MonsterSpawnData.InfiniteRespawns && RespawnCount >= SpawnData.MaxRespawns;
-    public bool OnCooldown => SpawnData.Respawnable && RespawnTimeElapsed >= 0 && RespawnTimeElapsed < SpawnData.RespawnDelayTimeUnits;
+    public bool Exhausted => SpawnData.MaxRespawns != MonsterSpawnData.InfiniteRespawns && RespawnCount >= SpawnData.MaxRespawns;
+    public bool OnCooldown => RespawnTimeElapsed >= 0 && RespawnTimeElapsed < SpawnData.RespawnDelayTimeUnits;
 
     public bool FarFromPlayer(Player p, IMapController map)
     {
@@ -145,12 +144,13 @@ public class MonsterCreator: IScheduledEntity
         coordList.Fill<Vector2Int>(refCoords);
         if(spawn.SpawnData.Scatter)
         {
-            _map.GetRandomOffsets(refCoords, ScatterLimitRadius, ref coordList, firstIsRef: true, (coords) =>
+            _map.GetRandomOffsets(refCoords, ScatterLimitRadius, ref coordList, firstIsRef: false, (coords) =>
             {
-                if (!monsterToChoose.MovingTraitData.MatchesTile(_map.GetTileAt(coords))) return true;
-                if (_entityController.ExistsEntitiesAt(coords)) return true;
+                bool matchesTile = monsterToChoose.MovingTraitData.MatchesTile(_map.GetTileAt(coords));
+                if (!matchesTile) return true;
 
-                return (bool)false;
+                bool occupied = _entityController.ExistsEntitiesAt(coords);
+                return occupied;
             });
         }
         List<(MonsterData, Vector2Int)> monsterList = new List<(MonsterData, Vector2Int)>();

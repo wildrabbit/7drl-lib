@@ -17,6 +17,7 @@ public class AIController
 
     public MonsterState MonsterBrain(Monster leMonster, out BaseMonsterAction actionData, float units)
     {
+        Debug.Log($"Monster {leMonster.Name} at {leMonster.Coords} is thinking");
         actionData = null;
 
         return MonsterState.Idle;

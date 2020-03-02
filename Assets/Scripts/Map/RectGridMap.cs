@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System;
 
 public enum DistanceStrategy
 { 
@@ -20,7 +21,7 @@ public class RectGridMap : IMapHelper
         new Vector2Int(0, 0),
         new Vector2Int(1, 0), new Vector2Int(1, 1), new Vector2Int(-1,1),
         new Vector2Int(-1, 0), new Vector2Int(-1, -1), new Vector2Int(1, -1),
-        new Vector2Int(0,1), new Vector2Int(1,0)
+        new Vector2Int(0,1), new Vector2Int(0,-1)
     };
 
     public int Distance(Vector2Int c1, Vector2Int c2)
@@ -44,5 +45,10 @@ public class RectGridMap : IMapHelper
     public Vector2Int GetDirectionOffset(MoveDirection moveDirection, Vector2Int srcCoords)
     {
         return _neighbourOffsets[(int)moveDirection];
+    }
+
+    public Vector2Int[] GetOffsets(Vector2Int coords)
+    {
+        return _neighbourOffsets;
     }
 }

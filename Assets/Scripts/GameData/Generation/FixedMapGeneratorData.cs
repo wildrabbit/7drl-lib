@@ -10,24 +10,13 @@ public class FixedMapGeneratorData : BaseMapGeneratorData
 
     public override GeneratorType GeneratorType => GeneratorType.Fixed;
     public int[] LevelData => _levelTiles;
-
-    public override Vector2Int MapSize
-    {
-        get
-        {
-            //if (_levelSize == Vector2Int.zero)
-            {
-                BuildLevelData();
-            }
-            return _levelSize;
-        }
-    }
+    public override Vector2Int MapSize => _levelSize;
 
     int[] _levelTiles;
     Vector2Int _levelSize;
 
 
-    bool BuildLevelData()
+    public bool BuildLevelData()
     {
         _levelSize = Vector2Int.zero;
         _levelTiles = null;

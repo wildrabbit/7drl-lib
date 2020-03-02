@@ -15,6 +15,7 @@ public abstract class BaseMapGeneratorData : ScriptableObject
 
     public int WallTile;
     public int GroundTile;
+    public int NoTile;
 
     public bool OriginIsTopLeft;
 }

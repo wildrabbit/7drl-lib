@@ -131,7 +131,9 @@ public class Player : BaseEntity, IBattleEntity, IHealthTrackingEntity
 
     public override bool TryResolveMoveIntoCoords(Vector2Int testCoords)
     {
-        if(!_movingTrait.EvaluateTile(_mapController.GetTileAt(testCoords)))
+        var tile = _mapController.GetTileAt(testCoords);
+
+        if(tile == null || !_movingTrait.EvaluateTile(tile))
         {
             return false;
         }
@@ -141,7 +143,8 @@ public class Player : BaseEntity, IBattleEntity, IHealthTrackingEntity
         {
             // Handle collision + entity actions!
         }
-        
+
+        Coords = testCoords;
         return true;
     }
 }

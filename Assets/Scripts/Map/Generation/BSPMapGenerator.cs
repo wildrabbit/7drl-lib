@@ -68,7 +68,7 @@ public class BSPMapGenerator : IMapGenerator
 
 
         int[,] mapAux = new int[_bspGenData.MapSize.x, _bspGenData.MapSize.y];
-        mapAux.Fill<int>(mapGenContext.noTile);
+        mapAux.Fill<int>(_bspGenData.NoTile);
 
         var tree = new BSPNode();
         _context.Tree = tree;
@@ -160,7 +160,7 @@ public class BSPMapGenerator : IMapGenerator
             GeneratorUtils.DrawRoom(new Vector2Int(row, col), new Vector2Int(height, width), _bspGenData.GroundTile, ref mapAux);
         }
         Connect(_context.Tree, ref mapAux);
-        GeneratorUtils.PlaceWalls(_bspGenData.WallTile, _bspGenData.GroundTile, _context.noTile, ref mapAux);
+        GeneratorUtils.PlaceWalls(_bspGenData.WallTile, _bspGenData.GroundTile, _bspGenData.NoTile, ref mapAux);
 
         // Player start
         int randomPlayerStart = URandom.Range(0, _rooms.Count);
@@ -171,11 +171,11 @@ public class BSPMapGenerator : IMapGenerator
         var patternsList = _bspGenData.PatternsList;
         foreach (var r in _rooms)
         {
-            bool tryApplyPattern = URandom.value < _bspGenData.PatternRoomsChance; 
-            if(tryApplyPattern && patternsList != null && patternsList.Count > 0)
+            bool tryApplyPattern = URandom.value < _bspGenData.PatternRoomsChance;
+            if (tryApplyPattern && patternsList != null && patternsList.Count > 0)
             {
                 var candidates = GetPatternCandidates(r);
-                if(candidates != null && candidates.Count > 0)
+                if (candidates != null && candidates.Count > 0)
                 {
                     ApplyPattern(r, _context.noTile, candidates[URandom.Range(0, candidates.Count)], ref mapAux);
                 }

@@ -78,4 +78,9 @@ public class HexGridMap: IMapHelper
         Vector2Int[] offsets = isEven ? _neighbourOffsets[0] : _neighbourOffsets[1];
         return offsets[(int)moveDirection];
     }
+
+    public Vector2Int[] GetOffsets(Vector2Int srcCoords)
+    {
+        return _neighbourOffsets[srcCoords.y & 1];
+    }
 }

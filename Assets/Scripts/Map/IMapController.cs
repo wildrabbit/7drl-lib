@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using UnityEngine.Tilemaps;
 
 public interface IMapController
@@ -21,5 +22,6 @@ public interface IMapController
 
     void GetNeighbourDeltas(Vector2Int currentCoords, out Vector2Int[] offsets);
     bool IsNavigationValidTile(Vector3Int coords);
+    void GetRandomOffsets(Vector2Int refCoords, int scatterLimitRadius, ref Vector2Int[] coordList, bool firstIsRef, Predicate<Vector2Int> exclusionCheck);
 }
 

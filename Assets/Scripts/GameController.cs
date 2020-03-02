@@ -20,16 +20,19 @@ public abstract class GameController : MonoBehaviour
         public const int Last = PlayStates.GameOver;
     }
 
-    [SerializeField] GameData _gameData;
-    [SerializeField] CameraController _cameraController;
+    [SerializeField] protected GameData _gameData;
+    [SerializeField] protected CameraController _cameraController;
     
-    [SerializeField] HUD _hudPrefab;
+    [SerializeField] protected HUD _hudPrefab;
 
-    public BaseGameEvents GameEvents;
+    protected BaseGameEvents GameEvents;
 
     protected IMapController _mapController;
     protected TimeController _timeController;
     protected IEntityController _entityController;
+
+    protected MonsterCreator _monsterCreator;
+    protected AIController _aiController;
 
     public TimeController TimeController => _timeController;
 
@@ -52,6 +55,8 @@ public abstract class GameController : MonoBehaviour
         _timeController = new TimeController();
         _entityController = CreateEntityController();
         _mapController = CreateMapController();
+        _monsterCreator = new MonsterCreator();
+        _aiController = new AIController();
 
         _result = GameResult.None;
         _loading = false;
@@ -82,9 +87,11 @@ public abstract class GameController : MonoBehaviour
 
     private void InitPlayStates()
     {
-        _playStates = new Dictionary<int, IPlayState>();
-        _playStates[PlayStates.Action] = CreatePlayerActionState();
-        _playStates[PlayStates.GameOver] = new GameOverState();
+        _playStates = new Dictionary<int, IPlayState>
+        {
+            [PlayStates.Action] = CreatePlayerActionState(),
+            [PlayStates.GameOver] = new GameOverState()
+        };
         InitExtendedPlayStates();
     }
 
@@ -98,13 +105,14 @@ public abstract class GameController : MonoBehaviour
 
     private void InitPlayStateData()
     {
-        _playContextData = new Dictionary<int, PlayStateContext>();
-
-        _playContextData[PlayStates.Action] = CreatePlayerActionStateContext();
-        _playContextData[PlayStates.GameOver] = new GameOverStateContext
+        _playContextData = new Dictionary<int, PlayStateContext>
         {
-            Input = _input,
-            Controller = this
+            [PlayStates.Action] = CreatePlayerActionStateContext(),
+            [PlayStates.GameOver] = new GameOverStateContext
+            {
+                Input = _input,
+                Controller = this
+            }
         };
         InitExtendedPlayStates();
     }
@@ -116,9 +124,13 @@ public abstract class GameController : MonoBehaviour
 
         GameEvents = null;
         _cameraController.Cleanup();
+        _monsterCreator.Cleanup();
+        _aiController.Cleanup();
         _mapController.Cleanup();
+
         _entityController.Cleanup();
         _timeController.Cleanup();
+
     }
 
     IEnumerator DelayedPurge(float delay)
@@ -131,22 +143,24 @@ public abstract class GameController : MonoBehaviour
     {
         GameEvents = CreateGameEvents();
 
+        // Init game control / time vars
+        _timeController.Init(_entityController, GameEvents.Time, _gameData.DefaultTimescale);
+        _timeController.Start();
+
         _inputDelay = _gameData.InputDelay;
         _input.Init(_gameData.InputData, _inputDelay);
 
         _mapController.Init(_gameData.MapData);
 
-        _entityController.Init(_mapController, _gameData.EntityCreationData, GameEvents);        
+        _entityController.Init(_mapController, _gameData.EntityCreationData, GameEvents);
 
-        _cameraController.Init(_mapController.WorldBounds, _entityController.Player.transform, GameEvents);
+        _aiController.Init(_entityController, _mapController);
+        _monsterCreator.Init(_entityController, _aiController, _mapController, _timeController, GameEvents.Monsters, _gameData.EntityCreationData.MonsterData);
 
-
+        
         // populate the level
         PopulateLevel();
 
-        // Init game control / time vars
-        _timeController.Init(_entityController, GameEvents.Time, _gameData.DefaultTimescale);
-        _timeController.Start();
 
         _playContext = PlayStates.Action;
         _playContextData[_playContext].Refresh(this);
@@ -158,9 +172,24 @@ public abstract class GameController : MonoBehaviour
         RegisterEntityEvents();
     }
 
-    protected virtual void PopulateLevel()
+    void PopulateLevel()
     {
-        // Game specific map logic?
+        _mapController.BuildMap();
+        _entityController.StartGame();
+
+        _cameraController.Init(_mapController.WorldBounds, _entityController.Player.transform, GameEvents);
+
+        _monsterCreator.RegisterSpawnPoints(FetchMonsterSpawnPoints());
+        _monsterCreator.ProcessInitialSpawns();
+        ExtendedPopulate();
+    }
+
+    protected virtual void ExtendedPopulate()
+    { }
+
+    protected virtual List<MonsterSpawnData> FetchMonsterSpawnPoints()
+    {
+        return new List<MonsterSpawnData>();
     }
 
     void RegisterEntityEvents()

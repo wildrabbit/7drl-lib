@@ -19,6 +19,19 @@ public class MonsterData: BaseEntityData
     public HPTraitData HPData;
     public BaseMovingTraitData MovingTraitData;
     public MonsterState InitialState;
+    public string[] userTags; // TODO: Resolve tags from properties!
+    HashSet<string> _tags;
+    public HashSet<string> MonsterTags
+    {
+        get
+        {
+            if(_tags == null)
+            {
+                ResolveTags();
+            }
+            return _tags;
+        }
+    }
 
     public int WanderToIdleMinTurns;
     public int WanderToIdleMaxTurns;
@@ -40,4 +53,21 @@ public class MonsterData: BaseEntityData
     [Header("loot stuff")]
     public LootInfo LootInfoOnDeath;
     public int XPOnDeath;
+
+    public void ResolveTags()
+    {
+        _tags = new HashSet<string>(userTags);
+        // TODO: Resolve tags depending on data properties (i.e: difficulty, etc, etc)
+    }
+
+    public bool MatchesTagSet(IEnumerable<string> reference)
+    {
+        return _tags.IsSupersetOf(reference);
+    }
+
+    public bool CheckTag(string tag)
+    {
+        return _tags.Contains(tag);
+    }
+
 }

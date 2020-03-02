@@ -36,15 +36,16 @@ public class TimeController: IDisposable
         _turnCount = 0;
     }
 
-    public void Update(ref int playContext)
+    public void Update(ref int playState)
     {
         float units = _timeScale * (1 / GameSpeed);
         foreach (var scheduled in _scheduledEntities)
         {
-            scheduled.AddTime(units, ref playContext);
+            scheduled.AddTime(units, ref playState);
         }
         _elapsedUnits += units;
         _turnCount++;
+
         _timeEvents.SendNewTurn(_turnCount);
     }
 

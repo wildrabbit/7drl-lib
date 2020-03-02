@@ -9,7 +9,7 @@ public class AIController
     
     // TODO: Instead of having a monster ask the director to think, keep a list and then update all the monsters!
 
-    public void Init(IEntityController entityController, IMapController mapController, GameEventLog eventsLog)
+    public void Init(IEntityController entityController, IMapController mapController)
     {
         _mapController = mapController;
         _entityController = entityController;

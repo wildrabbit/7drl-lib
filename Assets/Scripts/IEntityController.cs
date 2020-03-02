@@ -29,9 +29,11 @@ public interface IEntityController
     Player Player { get; }
 
     void Init(IMapController mapController, BaseEntityCreationData creationData, BaseGameEvents gameEvents);
+    void StartGame();
 
     Player CreatePlayer(PlayerData data, Vector2Int coords);
     Monster CreateMonster(MonsterData data, Vector2Int coords, AIController aiController);
+    List<Monster> CreateMonsters(List<(MonsterData, Vector2Int)> list, AIController aiController);
     T Create<T>(T prefab, BaseEntityData data, BaseEntityDependencies deps) where T : BaseEntity;
 
     bool ExistsNearbyEntity(Vector2Int coords, int radius, BaseEntity[] excluded = null);

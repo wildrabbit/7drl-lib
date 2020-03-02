@@ -34,6 +34,10 @@ public class EntityController : IEntityController
 
         _gameEvents = gameEvents;
 
+    }
+
+    public void StartGame()
+    {
         CreatePlayer(_entityCreationData.PlayerData, _mapController.PlayerStart);
     }
 
@@ -58,12 +62,32 @@ public class EntityController : IEntityController
             ParentNode = null,
             EntityController = this,
             Coords = coords,
-            AIController = aiController
+            AIController = aiController,
+            MapController = _mapController
         };
         var monster = Create<Monster>(_entityCreationData.MonsterPrefab, data, deps);
         return monster;
     }
-   
+
+    public List<Monster> CreateMonsters(List<(MonsterData, Vector2Int)> list, AIController aiController)
+    {
+        List<Monster> addedMonsters = new List<Monster>();
+        foreach(var (data, coords) in list)
+        {
+            MonsterDependencies deps = new MonsterDependencies()
+            {
+                ParentNode = null,
+                EntityController = this,
+                Coords = coords,
+                AIController = aiController,
+                MapController = _mapController
+            };
+            var monster = Create<Monster>(_entityCreationData.MonsterPrefab, data, deps);
+            addedMonsters.Add(monster);
+        }
+        return addedMonsters;
+    }
+
     public T Create<T>(T prefab, BaseEntityData data, BaseEntityDependencies deps) where T : BaseEntity
     {
         T entity = GameObject.Instantiate<T>(prefab);

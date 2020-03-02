@@ -8,6 +8,8 @@ public class FixedMapGeneratorData : BaseMapGeneratorData
     public Vector2Int PlayerStart;
     public TextAsset MapInfo;
 
+    public List<MonsterSpawnData> MonsterSpawns;
+
     public override GeneratorType GeneratorType => GeneratorType.Fixed;
     public int[] LevelData => _levelTiles;
     public override Vector2Int MapSize => _levelSize;

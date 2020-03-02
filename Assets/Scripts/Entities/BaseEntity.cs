@@ -86,11 +86,10 @@ public abstract class BaseEntity : MonoBehaviour, IScheduledEntity
         _coords = _mapController.CoordsFromWorld(transform.position);
     }
 
-    void OnRemovedPaint()
-    {
-    }
 
-    public abstract void AddTime(float timeUnits, ref int playContext);
+    #region ScheduledEntity
+        public abstract void AddTime(float timeUnits, ref int playContext);
+    #endregion
 
     public virtual void OnAdded()
     {
@@ -111,4 +110,5 @@ public abstract class BaseEntity : MonoBehaviour, IScheduledEntity
     }
 
     public abstract bool TryResolveMoveIntoCoords(Vector2Int coords);
+
 }

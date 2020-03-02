@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using AI;
 using UnityEngine;
 
 
@@ -43,12 +44,15 @@ public enum MonsterState
 
 public class Monster : BaseEntity, IBattleEntity, IHealthTrackingEntity
 {
+
     public SpriteRenderer ViewPrefab;
 
     public int HP => _hpTrait.HP;
     public int MaxHP => _hpTrait.MaxHP;
 
-    public MonsterState CurrentState => _currentState;
+    AI.State _currentState;
+    AI.State _noState => _monsterData.NoState;
+    float _currentStateTimeUnitsElapsed;
 
 
     public bool IsMelee => _monsterData.IsMelee;
@@ -79,10 +83,6 @@ public class Monster : BaseEntity, IBattleEntity, IHealthTrackingEntity
 
     HPTrait _hpTrait;
     BaseMovingTrait _movingTrait;
-
-
-    MonsterState _currentState;
-
 
     float _elapsedNextAction;
 
@@ -124,8 +124,8 @@ public class Monster : BaseEntity, IBattleEntity, IHealthTrackingEntity
         _movingTrait = _monsterData.MovingTraitData.CreateRuntimeTrait();
         _movingTrait.Init(_monsterData.MovingTraitData);
 
-        _turnsInSameState = 0;
-        StateChanged(_monsterData.InitialState);
+        _currentState = _monsterData.InitialState;
+        _currentStateTimeUnitsElapsed = 0.0f;
     }
 
     public void SetAIController(AIController aiController)
@@ -139,82 +139,30 @@ public class Monster : BaseEntity, IBattleEntity, IHealthTrackingEntity
 
         while (_elapsedNextAction >= _decisionDelay)
         {
-            BaseMonsterAction action;
-            MonsterState nextState = _aiController.MonsterBrain(this, out action, timeUnits);
-
-            // Execute action, change state!
-            if (action != null)
-            {
-                if(action.NextCoords != Coords)
-                {
-                    Coords = action.NextCoords;
-                    if(_entityController.Player.Coords == Coords && _monsterData.PlayerCollisionDmg > 0)
-                    {
-                        int monsterDmg = PlayerCollided(_entityController.Player);
-                        int playerDmg = _entityController.Player.MonsterCollided(this);
-                        _entityController.CollisionMonsterPlayer(_entityController.Player, this, playerDmg, monsterDmg);
-                    }
-                }
-                
-                if(action is ChaseMonsterAction)
-                {
-                    ChaseMonsterAction chaseAction = ((ChaseMonsterAction)action);
-                    _currentPathIdx = chaseAction.PathIdx;
-                    _elapsedPathUpdate = chaseAction.PathElapsed;
-                    if (chaseAction.RefreshPath)
-                    {
-                        _path = chaseAction.Path;
-                    }
-                }
-
-                else if (action is MeleeAttackAction)
-                {
-                    IBattleEntity target = ((MeleeAttackAction)action).Target;
-                    BattleActionResult results;
-                    BattleUtils.SolveAttack(this, target, out results);
-                }
-            }
-
-            // TODO: Combat actions!!
-
-            bool changeState = nextState != _currentState;
-            if(changeState)
-            {
-                StateChanged(nextState);
-            }
-            else
-            {
-                // UpdateState(state, action)
-                //if (_hpTrait.HP > 0 && _hpTrait.Regen)
-                //{
-                //    _hpTrait.UpdateRegen(timeUnits);
-                //}
-                _turnsInSameState++;
-            }
-
+            _currentStateTimeUnitsElapsed += _decisionDelay;
+            _currentState.Process(this, _decisionDelay);
             _elapsedNextAction = Mathf.Max(_elapsedNextAction - _decisionDelay, 0.0f);
+        }
+        
+    }
+
+    public void TransitionToNextState(AI.State next)
+    {
+        if (next != _noState)
+        {
+            _currentState = next;
+            OnExitState();
         }
     }
 
-    public void StateChanged(MonsterState monsterState)
+    public bool CheckTurnTimeElapsed(float duration)
     {
-        Debug.Log($"{name} changes state to { monsterState}");
-        switch (monsterState)
-        {
-            case MonsterState.Idle:
-            {
-                _turnLimit = UnityEngine.Random.Range(_monsterData.MinIdleTurns, _monsterData.MaxIdleTurns + 1);
-                break;
-            }
-            case MonsterState.Wandering:
-            {
-                _turnLimit = UnityEngine.Random.Range(_monsterData.WanderToIdleMinTurns, _monsterData.WanderToIdleMaxTurns + 1);
-                break;
-            }
-            default:
-                break;
-        }
-        _currentState = monsterState;
+        return _currentStateTimeUnitsElapsed >= duration; 
+    }
+
+    public void OnExitState()
+    {
+        _currentStateTimeUnitsElapsed = 0.0f;
     }
 
 
@@ -288,5 +236,21 @@ public class Monster : BaseEntity, IBattleEntity, IHealthTrackingEntity
         }
 
         return true;
+    }
+
+    public void WanderStep()
+    {
+        var neighbour = _mapController.RandomNeighbour(Coords, x => !IsTileValidMoveTarget(x));
+        Coords = neighbour;  
+        // TODO: Handle collisions?
+    }
+
+    public bool IsTileValidMoveTarget(Vector2Int coords)
+    {
+        bool matchesTile = _movingTrait.EvaluateTile(_mapController.GetTileAt(coords));
+        if (!matchesTile) return false;
+
+        bool occupied = _entityController.ExistsEntitiesAt(coords);
+        return !occupied || !(_entityController.GetEntitiesAt(coords, new BaseEntity[] { this }).Contains(_entityController.Player));
     }
 }

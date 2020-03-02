@@ -14,23 +14,23 @@ public class TimeController: IDisposable
     List<IScheduledEntity> _scheduledEntities;
 
     IEntityController _entityController;
-    BaseGameEvents.TimeEvents _timeEvents;    
+    BaseGameEvents _gameEvents;    
 
     public float GameSpeed => _entityController.Player.Speed;
 
-    public void Init(IEntityController entityController, BaseGameEvents.TimeEvents timeEvents, float defaultTimescale)
+    public void Init(IEntityController entityController, BaseGameEvents gameEvents, float defaultTimescale)
     {
         _timeScale = defaultTimescale;
         _scheduledEntities = new List<IScheduledEntity>();
-        _timeEvents = timeEvents;
+        _gameEvents = gameEvents;
 
         _entityController = entityController;
     }
 
     public void Start()
     {
-        _entityController.OnEntitiesAdded += RegisterScheduledEntities;
-        _entityController.OnEntitiesRemoved += UnregisterScheduledEntities;
+        _gameEvents.Entities.EntitiesAdded += RegisterScheduledEntities;
+        _gameEvents.Entities.EntitiesRemoved += UnregisterScheduledEntities;
 
         _elapsedUnits = 0;
         _turnCount = 0;
@@ -46,7 +46,7 @@ public class TimeController: IDisposable
         _elapsedUnits += units;
         _turnCount++;
 
-        _timeEvents.SendNewTurn(_turnCount);
+        _gameEvents.Time.SendNewTurn(_turnCount);
     }
 
     public void AddScheduledEntity(IScheduledEntity entity)
@@ -77,8 +77,8 @@ public class TimeController: IDisposable
 
     public void Cleanup()
     {
-        _entityController.OnEntitiesAdded -= RegisterScheduledEntities;
-        _entityController.OnEntitiesRemoved -= UnregisterScheduledEntities;
+        _gameEvents.Entities.EntitiesAdded -= RegisterScheduledEntities;
+        _gameEvents.Entities.EntitiesRemoved -= UnregisterScheduledEntities;
 
         _scheduledEntities.Clear();
     }

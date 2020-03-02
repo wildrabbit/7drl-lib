@@ -29,9 +29,9 @@ public class MonsterSpawn
 {
     public MonsterSpawnData SpawnData;
     public float RespawnTimeElapsed;
-    public int RespawnCount;
+    public int SpawnCount;
 
-    public bool Exhausted => SpawnData.MaxRespawns != MonsterSpawnData.InfiniteRespawns && RespawnCount >= SpawnData.MaxRespawns;
+    public bool Exhausted => SpawnData.MaxRespawns != MonsterSpawnData.InfiniteRespawns && SpawnCount > 0 && SpawnCount >= SpawnData.MaxRespawns;
     public bool OnCooldown => RespawnTimeElapsed >= 0 && RespawnTimeElapsed < SpawnData.RespawnDelayTimeUnits;
 
     public bool FarFromPlayer(Player p, IMapController map)
@@ -83,7 +83,7 @@ public class MonsterCreator: IScheduledEntity
             _spawnPoints.Add(new MonsterSpawn
             {
                 SpawnData = data,
-                RespawnCount = 0,
+                SpawnCount = 0,
                 RespawnTimeElapsed = -1.0f
             });
         }
@@ -144,7 +144,7 @@ public class MonsterCreator: IScheduledEntity
         coordList.Fill<Vector2Int>(refCoords);
         if(spawn.SpawnData.Scatter)
         {
-            _map.GetRandomOffsets(refCoords, ScatterLimitRadius, ref coordList, firstIsRef: false, (coords) =>
+            _map.SetRandomCoords(refCoords, ScatterLimitRadius, ref coordList, firstIsRef: false, (coords) =>
             {
                 bool matchesTile = monsterToChoose.MovingTraitData.MatchesTile(_map.GetTileAt(coords));
                 if (!matchesTile) return true;
@@ -158,10 +158,10 @@ public class MonsterCreator: IScheduledEntity
         {
             monsterList.Add((monsterToChoose, coordList[i]));
         }
-        
-        
+
+        Debug.Log($"Spawning {numMonsters} monsters of type {monsterToChoose.DisplayName}");
         _entityController.CreateMonsters(monsterList, _aiController);
-        spawn.RespawnCount++;
+        spawn.SpawnCount++;
         spawn.RespawnTimeElapsed = 0.0f;
     }
 

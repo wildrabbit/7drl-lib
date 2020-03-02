@@ -18,7 +18,9 @@ public class MonsterData: BaseEntityData
     public float ThinkingDelay;
     public HPTraitData HPData;
     public BaseMovingTraitData MovingTraitData;
-    public MonsterState InitialState;
+    public AI.State InitialState;
+    public AI.State NoState;
+
     public string[] userTags; // TODO: Resolve tags from properties!
     HashSet<string> _tags;
     public HashSet<string> MonsterTags

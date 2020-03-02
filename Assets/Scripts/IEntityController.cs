@@ -16,9 +16,6 @@ public delegate void EntityHealthDelegate(BaseEntity e, int dmg, bool explosion,
 
 public interface IEntityController
 {
-    event EntitiesAddedDelegate OnEntitiesAdded;
-    event EntitiesRemovedDelegate OnEntitiesRemoved;
-
     event PlayerDestroyedDelegate OnPlayerKilled;
     event MonsterDestroyedDelegate OnMonsterKilled;
 

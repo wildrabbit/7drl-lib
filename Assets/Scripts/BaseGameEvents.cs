@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System;
+using System.Collections.Generic;
 
 public class BaseGameEvents
 {
@@ -40,14 +41,32 @@ public class BaseGameEvents
         }
     }
 
+    public class EntityEvents
+    {
+        public event Action<List<BaseEntity>> EntitiesAdded;
+        public event Action<List<BaseEntity>> EntitiesRemoved;
+
+        public void SendEntitiesAdded(List<BaseEntity> newEntities)
+        {
+            EntitiesAdded?.Invoke(newEntities);
+        }
+
+        public void SendEntitiesRemoved(List<BaseEntity> removedEntities)
+        {
+            EntitiesRemoved?.Invoke(removedEntities);
+        }
+    }
+
     public TimeEvents Time;
     public PlayerEvents Player;
     public MonsterEvents Monsters;
+    public EntityEvents Entities;
 
     public BaseGameEvents()
     {
         Player = new PlayerEvents();
         Time = new TimeEvents();
         Monsters = new MonsterEvents();
+        Entities = new EntityEvents();
     }
 }

@@ -17,8 +17,6 @@ public class EntityController : IEntityController
     protected IMapController _mapController;
     protected BaseGameEvents _gameEvents;
     
-    public event EntitiesAddedDelegate OnEntitiesAdded;
-    public event EntitiesRemovedDelegate OnEntitiesRemoved;
     public event PlayerDestroyedDelegate OnPlayerKilled;
     public event MonsterDestroyedDelegate OnMonsterKilled;
     public event PlayerMonsterCollision OnPlayerMonsterCollision;
@@ -149,7 +147,7 @@ public class EntityController : IEntityController
             _allEntities.Add(e);
             // TODO: Check specific lists
         }
-        OnEntitiesAdded?.Invoke(_entitiesToAdd);
+        _gameEvents.Entities.SendEntitiesAdded(_entitiesToAdd);
         _entitiesToAdd.Clear();
     }
 
@@ -178,7 +176,7 @@ public class EntityController : IEntityController
             return;
         }
 
-        OnEntitiesRemoved?.Invoke(_entitiesToRemove);
+        _gameEvents.Entities.SendEntitiesRemoved(_entitiesToRemove);
 
         foreach (var e in _entitiesToRemove)
         {

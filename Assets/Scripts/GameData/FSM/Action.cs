@@ -4,12 +4,8 @@ using System.Collections;
 
 namespace AI
 {
-    public class Action : ScriptableObject
+    public abstract class Action : ScriptableObject
     {
-        public void Execute(Monster monster, float timeUnits)
-        {
-
-        }
+        public abstract void Execute(Monster controller, float timeUnits);
     }
-
 }

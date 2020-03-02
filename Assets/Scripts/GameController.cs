@@ -144,7 +144,7 @@ public abstract class GameController : MonoBehaviour
         GameEvents = CreateGameEvents();
 
         // Init game control / time vars
-        _timeController.Init(_entityController, GameEvents.Time, _gameData.DefaultTimescale);
+        _timeController.Init(_entityController, GameEvents, _gameData.DefaultTimescale);
         _timeController.Start();
 
         _inputDelay = _gameData.InputDelay;
@@ -181,7 +181,11 @@ public abstract class GameController : MonoBehaviour
 
         _monsterCreator.RegisterSpawnPoints(FetchMonsterSpawnPoints());
         _monsterCreator.ProcessInitialSpawns();
+
         ExtendedPopulate();
+
+        _entityController.AddNewEntities();
+        _entityController.RemovePendingEntities();
     }
 
     protected virtual void ExtendedPopulate()

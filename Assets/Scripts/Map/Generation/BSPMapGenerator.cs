@@ -128,7 +128,7 @@ public class BSPMapGenerator : IMapGenerator
         {
             for(var c = 0; c < width; ++c)
             {
-                if(pattern[r,c] != noTile && (_context.PlayerStart.x != row + r || _context.PlayerStart.y != col + c))
+                if(pattern[r,c] != noTile && (_context.PlayerStart.x != row + r && _context.PlayerStart.y != col + c))
                 {
                     map[row + r, col + c] = pattern[r, c];
                 }
@@ -165,8 +165,21 @@ public class BSPMapGenerator : IMapGenerator
         // Player start
         int randomPlayerStart = URandom.Range(0, _rooms.Count);
         BSPRect playerStart = _rooms[randomPlayerStart];
-        _context.PlayerStart = GetRandomCoordsInRoom(playerStart);
 
+        int maxIters = 10;
+        int curIter = 0;
+        do
+        {
+            _context.PlayerStart = GetRandomCoordsInRoom(playerStart);
+            curIter++;
+        } while (mapAux[_context.PlayerStart.x, _context.PlayerStart.y] != _bspGenData.GroundTile && curIter < maxIters);
+
+        if(curIter == maxIters)
+        {
+            Debug.Log("WTF, MAX ITERS REACHED");
+        }
+
+        
         // Place patterns:
         var patternsList = _bspGenData.PatternsList;
         foreach (var r in _rooms)
@@ -177,9 +190,15 @@ public class BSPMapGenerator : IMapGenerator
                 var candidates = GetPatternCandidates(r);
                 if (candidates != null && candidates.Count > 0)
                 {
-                    ApplyPattern(r, _context.noTile, candidates[URandom.Range(0, candidates.Count)], ref mapAux);
+                    ApplyPattern(r, _bspGenData.NoTile, candidates[URandom.Range(0, candidates.Count)], ref mapAux);
                 }
             }
+        }
+        Debug.Log($"Player start { _context.PlayerStart}");
+        int tileValue = mapAux[_context.PlayerStart.x, _context.PlayerStart.y];
+        if (tileValue != _bspGenData.GroundTile)
+        {
+            Debug.Log($"On top of a tile {tileValue}");
         }
 
     }

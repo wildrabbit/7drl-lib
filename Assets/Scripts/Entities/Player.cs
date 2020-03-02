@@ -24,6 +24,19 @@ public class Player : BaseEntity, IBattleEntity, IHealthTrackingEntity
     public int MaxHP => _hpTrait.MaxHP;
     public float Speed => _speed;
 
+    public override Vector2Int Coords
+    {
+        get
+        {
+            return base.Coords;
+        }
+        set
+        {
+            base.Coords = value;
+            _playerEvents.SendPlayerMoved(value, transform.position);
+        }
+    }
+
     public bool CanMoveIntoMonsterCoords => _playerData.CanMoveIntoMonsterCoords;
     public int DmgFromMonsterCollision => _playerData.MonsterCollisionDmg;
 
@@ -43,6 +56,7 @@ public class Player : BaseEntity, IBattleEntity, IHealthTrackingEntity
     PlayerData _playerData;
     HPTrait _hpTrait;
     BaseMovingTrait _movingTrait;
+    BaseGameEvents.PlayerEvents _playerEvents;
 
 
     protected override void DoInit(BaseEntityDependencies deps)
@@ -56,6 +70,8 @@ public class Player : BaseEntity, IBattleEntity, IHealthTrackingEntity
 
         _movingTrait = _playerData.MovingTraitData.CreateRuntimeTrait();
         _movingTrait.Init(_playerData.MovingTraitData);
+
+        _playerEvents = deps.GameEvents.Player;
     }
 
     public override void AddTime(float timeUnits, ref int playContext)
@@ -145,6 +161,7 @@ public class Player : BaseEntity, IBattleEntity, IHealthTrackingEntity
         }
 
         Coords = testCoords;
+        //_playerEvents.SendPlayerMoved(testCoords, transform.position);
         return true;
     }
 }

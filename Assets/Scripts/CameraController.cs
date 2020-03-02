@@ -77,7 +77,7 @@ public class CameraController : MonoBehaviour
     {
     }
 
-    public void PlayerMoved(Vector2Int newCoords, Vector2 worldPos, BaseEntity whoMoved)
+    public void PlayerMoved(Vector2Int newCoords, Vector3 worldPos)
     {
         SetCamPos2D(worldPos);
     }
@@ -87,8 +87,9 @@ public class CameraController : MonoBehaviour
         _target = null;
     }
 
-    internal void Init(Rect mapBounds, Transform cameraTarget)
+    internal void Init(Rect mapBounds, Transform cameraTarget, BaseGameEvents gameEvents)
     {
+        gameEvents.Player.Moved += PlayerMoved;
         SetBounds(mapBounds);
         SetTarget(cameraTarget);
     }

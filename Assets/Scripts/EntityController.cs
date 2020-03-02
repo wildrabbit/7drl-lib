@@ -15,6 +15,7 @@ public class EntityController : IEntityController
     public Player Player => _player;
 
     protected IMapController _mapController;
+    protected BaseGameEvents _gameEvents;
     
     public event EntitiesAddedDelegate OnEntitiesAdded;
     public event EntitiesRemovedDelegate OnEntitiesRemoved;
@@ -23,13 +24,15 @@ public class EntityController : IEntityController
     public event PlayerMonsterCollision OnPlayerMonsterCollision;
     public event EntityHealthDelegate OnEntityHealth;
 
-    public void Init(IMapController mapController, BaseEntityCreationData entityCreationData)
+    public void Init(IMapController mapController, BaseEntityCreationData entityCreationData, BaseGameEvents gameEvents)
     {
         _mapController = mapController;
         _entityCreationData = entityCreationData;
         _allEntities = new List<BaseEntity>();
         _entitiesToAdd = new List<BaseEntity>();
         _entitiesToRemove = new List<BaseEntity>();
+
+        _gameEvents = gameEvents;
 
         CreatePlayer(_entityCreationData.PlayerData, _mapController.PlayerStart);
     }
@@ -41,6 +44,7 @@ public class EntityController : IEntityController
             ParentNode = null,
             EntityController = this,
             MapController = _mapController,
+            GameEvents = _gameEvents,
             Coords = coords
         };
         _player = Create<Player>(_entityCreationData.PlayerPrefab, data, deps);

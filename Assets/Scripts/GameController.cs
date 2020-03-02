@@ -48,6 +48,7 @@ public abstract class GameController : MonoBehaviour
     
     protected virtual void Awake()
     {
+        GameEvents = CreateGameEvents();
         _input = CreateInputController();
         _timeController = new TimeController();
         _entityController = CreateEntityController();
@@ -139,9 +140,9 @@ public abstract class GameController : MonoBehaviour
 
         _mapController.Init(_gameData.MapData);
 
-        _entityController.Init(_mapController, _gameData.EntityCreationData);        
+        _entityController.Init(_mapController, _gameData.EntityCreationData, GameEvents);        
 
-        _cameraController.Init(_mapController.WorldBounds, _entityController.Player.transform);
+        _cameraController.Init(_mapController.WorldBounds, _entityController.Player.transform, GameEvents);
 
 
         // populate the level

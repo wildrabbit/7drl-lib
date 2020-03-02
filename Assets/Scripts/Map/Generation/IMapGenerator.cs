@@ -1,7 +1,6 @@
 ﻿public class BaseMapContext
 {
     public BaseMapGeneratorData GeneratorData;
-    public int noTile;
 }
 
 public interface IMapGenerator

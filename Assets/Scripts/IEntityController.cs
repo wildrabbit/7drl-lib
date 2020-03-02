@@ -28,7 +28,7 @@ public interface IEntityController
 
     Player Player { get; }
 
-    void Init(IMapController mapController, BaseEntityCreationData creationData);
+    void Init(IMapController mapController, BaseEntityCreationData creationData, BaseGameEvents gameEvents);
 
     Player CreatePlayer(PlayerData data, Vector2Int coords);
     Monster CreateMonster(MonsterData data, Vector2Int coords, AIController aiController);

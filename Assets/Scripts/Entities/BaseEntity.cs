@@ -9,6 +9,7 @@ public class BaseEntityDependencies
     public IEntityController EntityController;
     public IMapController MapController;
     public Vector2Int Coords;
+    public BaseGameEvents GameEvents;
 }
 
 public class TileBasedEffect
@@ -22,7 +23,7 @@ public delegate void EntityMovedDelegate(Vector2Int nextCoords, Vector2 worldPos
 public abstract class BaseEntity : MonoBehaviour, IScheduledEntity
 {
     public string Name => _entityData.DisplayName;
-    public Vector2Int Coords
+    public virtual Vector2Int Coords
     {
         get => _coords;
         set
@@ -59,7 +60,7 @@ public abstract class BaseEntity : MonoBehaviour, IScheduledEntity
         _entityData = entityData;
         _entityController = deps.EntityController;
         _mapController = deps.MapController;
-
+      
         Frozen = false;
         DoInit(deps);
         Coords = deps.Coords;

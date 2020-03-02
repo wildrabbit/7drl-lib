@@ -20,11 +20,22 @@ public class BaseGameEvents
         //.....
     }
 
+    public class TimeEvents
+    {
+        public event Action<int> NewTurn;
 
+        public void SendNewTurn(int newTurn)
+        {
+            NewTurn?.Invoke(newTurn);
+        }
+    }
+
+    public TimeEvents Time;
     public PlayerEvents Player;
 
     public BaseGameEvents()
     {
         Player = new PlayerEvents();
+        Time = new TimeEvents();
     }
 }

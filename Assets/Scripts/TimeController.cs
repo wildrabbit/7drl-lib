@@ -14,13 +14,15 @@ public class TimeController: IDisposable
     List<IScheduledEntity> _scheduledEntities;
 
     IEntityController _entityController;
+    BaseGameEvents.TimeEvents _timeEvents;    
 
     public float GameSpeed => _entityController.Player.Speed;
 
-    public void Init(IEntityController entityController, float defaultTimescale)
+    public void Init(IEntityController entityController, BaseGameEvents.TimeEvents timeEvents, float defaultTimescale)
     {
         _timeScale = defaultTimescale;
         _scheduledEntities = new List<IScheduledEntity>();
+        _timeEvents = timeEvents;
 
         _entityController = entityController;
     }
@@ -43,6 +45,7 @@ public class TimeController: IDisposable
         }
         _elapsedUnits += units;
         _turnCount++;
+        _timeEvents.SendNewTurn(_turnCount);
     }
 
     public void AddScheduledEntity(IScheduledEntity entity)

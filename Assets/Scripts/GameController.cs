@@ -48,7 +48,6 @@ public abstract class GameController : MonoBehaviour
     
     protected virtual void Awake()
     {
-        GameEvents = CreateGameEvents();
         _input = CreateInputController();
         _timeController = new TimeController();
         _entityController = CreateEntityController();
@@ -84,7 +83,7 @@ public abstract class GameController : MonoBehaviour
     private void InitPlayStates()
     {
         _playStates = new Dictionary<int, IPlayState>();
-        _playStates[PlayStates.Action] = new PlayerActionState();
+        _playStates[PlayStates.Action] = CreatePlayerActionState();
         _playStates[PlayStates.GameOver] = new GameOverState();
         InitExtendedPlayStates();
     }
@@ -101,13 +100,7 @@ public abstract class GameController : MonoBehaviour
     {
         _playContextData = new Dictionary<int, PlayStateContext>();
 
-        _playContextData[PlayStates.Action] = new PlayerActionStateContext
-        {
-            Input = _input,
-            BumpingWallsWillSpendTurn = _gameData.BumpingWallsWillSpendTurn,
-            EntityController = _entityController,
-            Map = _mapController
-        };
+        _playContextData[PlayStates.Action] = CreatePlayerActionStateContext();
         _playContextData[PlayStates.GameOver] = new GameOverStateContext
         {
             Input = _input,
@@ -121,6 +114,7 @@ public abstract class GameController : MonoBehaviour
     {
         UnRegisterEntityEvents();
 
+        GameEvents = null;
         _cameraController.Cleanup();
         _mapController.Cleanup();
         _entityController.Cleanup();
@@ -135,6 +129,8 @@ public abstract class GameController : MonoBehaviour
 
     void StartGame()
     {
+        GameEvents = CreateGameEvents();
+
         _inputDelay = _gameData.InputDelay;
         _input.Init(_gameData.InputData, _inputDelay);
 
@@ -149,13 +145,15 @@ public abstract class GameController : MonoBehaviour
         PopulateLevel();
 
         // Init game control / time vars
-        _timeController.Init(_entityController, _gameData.DefaultTimescale);
+        _timeController.Init(_entityController, GameEvents.Time, _gameData.DefaultTimescale);
         _timeController.Start();
 
         _playContext = PlayStates.Action;
         _playContextData[_playContext].Refresh(this);
 
         _result = GameResult.Running;
+
+        GameEvents.Time.NewTurn += (val) => Debug.Log($"New turn: {_timeController.Turns}. Time elapsed: {_timeController.TimeUnits}");
         
         RegisterEntityEvents();
     }
@@ -219,5 +217,21 @@ public abstract class GameController : MonoBehaviour
         yield return new WaitForSeconds(0.1f);
         StartGame(); // TODO: Change level or smthing.
         _loading = false;
+    }
+
+    protected virtual PlayerActionState CreatePlayerActionState()
+    {
+        return new PlayerActionState();
+    }
+
+    protected virtual PlayerActionStateContext CreatePlayerActionStateContext()
+    {
+        return new PlayerActionStateContext
+        {
+            Input = _input,
+            BumpingWallsWillSpendTurn = _gameData.BumpingWallsWillSpendTurn,
+            EntityController = _entityController,
+            Map = _mapController
+        };
     }
 }

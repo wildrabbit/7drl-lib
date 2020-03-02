@@ -41,7 +41,7 @@ public class PlayerActionState : IPlayState
 
 
         // GAME SPECIFIC
-        if(HandleExtendedActions(out timeWillPass, out var nextPlayState))
+        if(HandleExtendedActions(actionData, out timeWillPass, out var nextPlayState))
         {
             return nextPlayState;
         }
@@ -55,6 +55,10 @@ public class PlayerActionState : IPlayState
             {
                 timeWillPass = actionData.BumpingWallsWillSpendTurn;
             }
+            else
+            {
+                timeWillPass = true;
+            }
         }
 
         // Quick Inventory actions:
@@ -67,7 +71,7 @@ public class PlayerActionState : IPlayState
         return GameController.PlayStates.Action;
     }
 
-    protected virtual bool HandleExtendedActions(out bool timeWillPass, out int nextPlayContext)
+    protected virtual bool HandleExtendedActions(PlayerActionStateContext contextData, out bool timeWillPass, out int nextPlayContext)
     {
         nextPlayContext = GameController.PlayStates.Action;
         timeWillPass = false;

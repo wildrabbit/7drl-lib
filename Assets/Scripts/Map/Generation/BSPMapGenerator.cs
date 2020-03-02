@@ -194,13 +194,6 @@ public class BSPMapGenerator : IMapGenerator
                 }
             }
         }
-        Debug.Log($"Player start { _context.PlayerStart}");
-        int tileValue = mapAux[_context.PlayerStart.x, _context.PlayerStart.y];
-        if (tileValue != _bspGenData.GroundTile)
-        {
-            Debug.Log($"On top of a tile {tileValue}");
-        }
-
     }
 
     public Vector2Int GetRandomCoordsInRoom(BSPRect rect)

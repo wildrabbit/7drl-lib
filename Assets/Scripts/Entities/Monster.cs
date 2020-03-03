@@ -172,6 +172,10 @@ public class Monster : BaseEntity, IBattleEntity, IHealthTrackingEntity
 
     public void OnExitState()
     {
+        _path?.Clear();
+        _currentPathIdx = 0;
+        _elapsedPathUpdate = 0.0f;
+
         _currentStateTimeUnitsElapsed = 0.0f;
     }
 

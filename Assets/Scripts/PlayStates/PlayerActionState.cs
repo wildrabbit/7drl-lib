@@ -11,6 +11,11 @@ public class PlayerActionStateContext : PlayStateContext
     public override void Refresh(GameController gameController)
     {
     }
+
+    public override void Init(GameController gameController)
+    {
+        Refresh(gameController);
+    }
 }
 
 

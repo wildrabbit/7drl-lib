@@ -37,7 +37,7 @@ public abstract class GameController : MonoBehaviour
 
     float _inputDelay;
     
-    int _playContext;
+    int _playStateID;
     bool _loading;
     public bool Loading => _loading;
     
@@ -109,7 +109,9 @@ public abstract class GameController : MonoBehaviour
             [PlayStates.GameOver] = new GameOverStateContext
             {
                 Input = _input,
-                Controller = this
+                Controller = this,
+                Delay = 5.0f,
+                Elapsed = -1.0f
             }
         };
         InitExtendedPlayStates();
@@ -157,10 +159,12 @@ public abstract class GameController : MonoBehaviour
         // populate the level
         PopulateLevel();
 
+        foreach(var stateContext in _playStatesData.Values)
+        {
+            stateContext.Init(this);
+        };
 
-        _playContext = PlayStates.Action;
-        _playStatesData[_playContext].Refresh(this);
-
+        _playStateID = PlayStates.Action;
         _result = GameResult.Running;
 
         GameEvents.Time.NewTurn += (val) => Debug.Log($"New turn: {_timeController.Turns}. Time elapsed: {_timeController.TimeUnits}");
@@ -206,7 +210,8 @@ public abstract class GameController : MonoBehaviour
     private void OnPlayerDied()
     {
         _result = GameResult.Lost;
-        _playContext = PlayStates.GameOver;
+        _playStateID = PlayStates.GameOver;
+        ((GameOverStateContext)_playStatesData[_playStateID]).Elapsed = 0.0f;
 
         GameEvents.Flow.SendGameOver(_result);
     }
@@ -225,13 +230,13 @@ public abstract class GameController : MonoBehaviour
         }
 
         _input.Read();
-        _playStatesData[_playContext].Refresh(this);
-        int nextPlayState = _playStates[_playContext].Update(_playStatesData[_playContext], out var timeWillPass);
-        _playContext = nextPlayState;
+        _playStatesData[_playStateID].Refresh(this);
+        int nextPlayState = _playStates[_playStateID].Update(_playStatesData[_playStateID], out var timeWillPass);
+        _playStateID = nextPlayState;
 
         if (timeWillPass)
         {
-            _timeController.Update(ref _playContext);            
+            _timeController.Update(ref _playStateID);            
         }
 
         _entityController.RemovePendingEntities();

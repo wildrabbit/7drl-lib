@@ -15,9 +15,8 @@ public class PlayStateContext
 
     }
 
-    public static implicit operator PlayStateContext(GameOverState v)
+    public virtual void Init(GameController gameController)
     {
-        throw new NotImplementedException();
     }
 }
 

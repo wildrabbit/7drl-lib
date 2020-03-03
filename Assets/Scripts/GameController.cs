@@ -44,7 +44,7 @@ public abstract class GameController : MonoBehaviour
     
     // :thinking: Does the behaviour/data make sense for this? Should context also include the data?
     Dictionary<int, IPlayState> _playStates;
-    Dictionary<int, PlayStateContext> _playContextData;
+    Dictionary<int, PlayStateContext> _playStatesData;
 
     BaseInputController _input;
     GameResult _result;
@@ -105,7 +105,7 @@ public abstract class GameController : MonoBehaviour
 
     private void InitPlayStateData()
     {
-        _playContextData = new Dictionary<int, PlayStateContext>
+        _playStatesData = new Dictionary<int, PlayStateContext>
         {
             [PlayStates.Action] = CreatePlayerActionStateContext(),
             [PlayStates.GameOver] = new GameOverStateContext
@@ -163,13 +163,14 @@ public abstract class GameController : MonoBehaviour
 
 
         _playContext = PlayStates.Action;
-        _playContextData[_playContext].Refresh(this);
+        _playStatesData[_playContext].Refresh(this);
 
         _result = GameResult.Running;
 
         GameEvents.Time.NewTurn += (val) => Debug.Log($"New turn: {_timeController.Turns}. Time elapsed: {_timeController.TimeUnits}");
         
         RegisterEntityEvents();
+        GameEvents.Flow.SendStarted();
     }
 
     void PopulateLevel()
@@ -198,12 +199,20 @@ public abstract class GameController : MonoBehaviour
 
     void RegisterEntityEvents()
     {
-
+        GameEvents.Player.Died += OnPlayerDied;
     }
 
     void UnRegisterEntityEvents()
     {
- 
+        GameEvents.Player.Died -= OnPlayerDied;
+    }
+
+    private void OnPlayerDied()
+    {
+        _result = GameResult.Lost;
+        _playContext = PlayStates.GameOver;
+
+        GameEvents.Flow.SendGameOver(_result);
     }
 
     public void Restart()
@@ -220,8 +229,8 @@ public abstract class GameController : MonoBehaviour
         }
 
         _input.Read();
-        _playContextData[_playContext].Refresh(this);
-        int nextPlayState = _playStates[_playContext].Update(_playContextData[_playContext], out var timeWillPass);
+        _playStatesData[_playContext].Refresh(this);
+        int nextPlayState = _playStates[_playContext].Update(_playStatesData[_playContext], out var timeWillPass);
         _playContext = nextPlayState;
 
         if (timeWillPass)

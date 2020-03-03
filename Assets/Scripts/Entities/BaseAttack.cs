@@ -9,10 +9,8 @@ public abstract class BaseAttack
 
     public abstract bool CanTargetBeReached(Vector2Int source, Vector2Int target, out MoveDirection dir);
 
-    public void Rotate90CC(ref Vector2Int coords)
+    public Vector2Int Rotate90CC(Vector2Int coords)
     {
-        int aux = coords.x;
-        coords.x = -coords.y;
-        coords.y = aux;
+        return new Vector2Int(-coords.y, coords.x);
     }
 }

@@ -97,7 +97,7 @@ public class Player : BaseEntity, IBattleEntity, IHealthTrackingEntity
         Debug.Log($"Player took {damage} damage!. Current HP: {HP}");
         if (HP == 0)
         {
-            _entityController.PlayerKilled();
+            _playerEvents.SendPlayerDied();
             _entityController.DestroyEntity(this);
             return true;
         }

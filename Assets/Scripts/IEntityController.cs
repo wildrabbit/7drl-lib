@@ -44,8 +44,6 @@ public interface IEntityController
 
     void PlayerDestroyed();
     
-    void NotifyMonsterKilled(Monster monster);
-    void PlayerKilled();
 
     void CollisionMonsterPlayer(Player p, Monster m, int playerDmg, int monsterDmg);
 

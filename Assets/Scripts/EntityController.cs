@@ -79,7 +79,8 @@ public class EntityController : IEntityController
                 EntityController = this,
                 Coords = coords,
                 AIController = aiController,
-                MapController = _mapController
+                MapController = _mapController,
+                GameEvents = _gameEvents
             };
             var monster = Create<Monster>(_entityCreationData.MonsterPrefab, data, deps);
             addedMonsters.Add(monster);
@@ -92,6 +93,7 @@ public class EntityController : IEntityController
         T entity = GameObject.Instantiate<T>(prefab);
         entity.Init(data, deps);
         _entitiesToAdd.Add(entity);
+        entity.OnCreated();
         return entity;
     }
 
@@ -212,16 +214,7 @@ public class EntityController : IEntityController
         return false;
     }
 
-   
-    public void NotifyMonsterKilled(Monster monster)
-    {
-        OnMonsterKilled?.Invoke(monster);
-    }
 
-    public void PlayerKilled()
-    {
-        OnPlayerKilled?.Invoke();
-    }
 
     public void CollisionMonsterPlayer(Player p, Monster m, int playerDmg, int monsterDmg)
     {

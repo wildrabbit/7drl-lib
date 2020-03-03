@@ -100,6 +100,7 @@ public class Monster : BaseEntity, IBattleEntity, IHealthTrackingEntity
     List<Vector2Int> _path;
     int _currentPathIdx;
 
+    BaseGameEvents.MonsterEvents _monsterEvents;
 
     AIController _aiController;
     
@@ -119,6 +120,8 @@ public class Monster : BaseEntity, IBattleEntity, IHealthTrackingEntity
 
         _movingTrait = _monsterData.MovingTraitData.CreateRuntimeTrait();
         _movingTrait.Init(_monsterData.MovingTraitData);
+
+        _monsterEvents = deps.GameEvents.Monsters;
 
         _currentState = _monsterData.InitialState;
         _currentStateTimeUnitsElapsed = 0.0f;
@@ -183,11 +186,14 @@ public class Monster : BaseEntity, IBattleEntity, IHealthTrackingEntity
 
         _currentStateTimeUnitsElapsed = 0.0f;
     }
-
+    public override void OnCreated()
+    {
+        _monsterEvents.SendSpawned(this, Coords);
+    }
 
     public override void OnDestroyed()
     {
-        _entityController.NotifyMonsterKilled(this);
+        _monsterEvents.SendDestroyed(this);
     }
 
     public override void Cleanup()

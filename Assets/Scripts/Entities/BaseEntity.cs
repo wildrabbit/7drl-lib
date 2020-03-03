@@ -91,6 +91,11 @@ public abstract class BaseEntity : MonoBehaviour, IScheduledEntity
         public abstract void AddTime(float timeUnits, ref int playContext);
     #endregion
 
+    public virtual void OnCreated()
+    {
+
+    }
+
     public virtual void OnAdded()
     {
         _active = true;

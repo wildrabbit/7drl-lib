@@ -51,13 +51,27 @@ public class PlayerActionState : IPlayState
         {
             var newPlayerCoords = playerCoords + offset;
 
-            if (!player.TryResolveMoveIntoCoords(newPlayerCoords))
+            if (!player.ValidMapCoords(newPlayerCoords))
             {
                 timeWillPass = actionData.BumpingWallsWillSpendTurn;
             }
             else
             {
                 timeWillPass = true;
+
+                // Check interactions
+                bool canMove = true;
+                if(player.CanAttackCoords(newPlayerCoords))
+                {
+                    bool allDefeated = player.AttackCoords(newPlayerCoords);
+                    canMove = allDefeated;
+                }
+                // ...others
+
+                if(canMove)
+                {
+                    player.Coords = newPlayerCoords;
+                }
             }
         }
 

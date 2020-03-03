@@ -6,9 +6,6 @@ public delegate void HPChangedDelegate(int newHP, IHealthTrackingEntity Owner);
 
 public class HPTrait
 {
-    public event ExhaustedHP OnExhaustedHP;
-    public event HPChangedDelegate OnPlayerHPChanged;
-
     public HPTraitData _data;
 
     public IHealthTrackingEntity  Owner => _owner;
@@ -24,6 +21,12 @@ public class HPTrait
     float _elapsedSinceLastRefill = 0.0f;
     int _regenAmount;
     bool _regen;
+
+
+    public event Action<IHealthTrackingEntity> HPExhausted;
+    public event Action<IHealthTrackingEntity,int> HPChanged;
+    public event Action<IHealthTrackingEntity,int> MaxHPChanged;
+    public event Action<IHealthTrackingEntity, int> Regenerated;
 
     public void Init(IHealthTrackingEntity owner, HPTraitData hpData)
     {
@@ -42,7 +45,7 @@ public class HPTrait
         if(refillCurrent)
         {
             _hp = _maxHP;
-            OnPlayerHPChanged?.Invoke(_hp, _owner);
+            MaxHPChanged?.Invoke(_owner, _maxHP);
         }
     }
 
@@ -72,16 +75,18 @@ public class HPTrait
     public void Add(int delta)
     {
         _hp = Mathf.Clamp(_hp + delta, 0, _maxHP);
-        OnPlayerHPChanged?.Invoke(_hp, _owner);
+        HPChanged?.Invoke(_owner, delta);
     }
 
     public void Decrease(int delta)
     {
         _hp = Mathf.Clamp(_hp - delta, 0, _maxHP);
-        OnPlayerHPChanged?.Invoke(_hp, _owner);
+        HPChanged?.Invoke(_owner, delta);
         if (_hp == 0)
         {
-            OnExhaustedHP?.Invoke(this.Owner);
+            HPExhausted?.Invoke(_owner);
         }
     }
+
+
 }

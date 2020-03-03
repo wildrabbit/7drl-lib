@@ -7,10 +7,6 @@ public class DirectionDataMapping
 {
     public MoveDirection MoveDir;
     public KeyCode KeyCode;
-    public string ToString()
-    {
-        return $"{MoveDir}=> {KeyCode}";
-    }
 }
 
 [System.Serializable]

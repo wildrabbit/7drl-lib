@@ -32,7 +32,6 @@ public abstract class GameController : MonoBehaviour
     protected IEntityController _entityController;
 
     protected MonsterCreator _monsterCreator;
-    protected AIController _aiController;
 
     public TimeController TimeController => _timeController;
 
@@ -56,7 +55,6 @@ public abstract class GameController : MonoBehaviour
         _entityController = CreateEntityController();
         _mapController = CreateMapController();
         _monsterCreator = new MonsterCreator();
-        _aiController = new AIController();
 
         _result = GameResult.None;
         _loading = false;
@@ -125,7 +123,6 @@ public abstract class GameController : MonoBehaviour
         GameEvents = null;
         _cameraController.Cleanup();
         _monsterCreator.Cleanup();
-        _aiController.Cleanup();
         _mapController.Cleanup();
 
         _entityController.Cleanup();
@@ -154,8 +151,7 @@ public abstract class GameController : MonoBehaviour
 
         _entityController.Init(_mapController, _gameData.EntityCreationData, GameEvents);
 
-        _aiController.Init(_entityController, _mapController);
-        _monsterCreator.Init(_entityController, _aiController, _mapController, _timeController, GameEvents.Monsters, _gameData.EntityCreationData.MonsterData);
+        _monsterCreator.Init(_entityController, _mapController, _timeController, GameEvents.Monsters, _gameData.EntityCreationData.MonsterData);
 
         
         // populate the level

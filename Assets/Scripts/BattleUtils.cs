@@ -29,13 +29,13 @@ public class BattleActionResult
 
 public class BattleUtils
 {
-    public static void SolveAttack(IBattleEntity attacker, IBattleEntity defender, out BattleActionResult results)
+    public static void SolveAttack(IBattleEntity2 attacker, IBattleEntity2 defender, out BattleActionResult results)
     {
         results = new BattleActionResult();
         results.AttackerName = attacker.Name;
         results.DefenderName = defender.Name;
 
-        results.DefenderStartHP = defender.HP;
+        results.DefenderStartHP = defender.HPTrait.HP;
         
         // 1. Solve chance to hit
         float attackerHitChance = 1.0f;
@@ -54,24 +54,24 @@ public class BattleUtils
         }
 
         // 3. Crit check?
-        float attackBonus = 0.0f;
+        float attackCriticalBonus = 0.0f;
 
         float attackerCritChance = 0.0f;
         if (URandom.value <= attackerCritChance)
         {
-            attackBonus = 0.0f;
+            attackCriticalBonus = 0.0f;
             results.Critical = true;
         }
 
         // 4. Attack
-        float attack = attacker.Damage;
-        attack *= (1 + attackBonus);
+        float attack = attacker.BattleTrait.Damage;
+        attack *= (1 + attackCriticalBonus);
         float defense = 0.0f;
 
         int damageInflicted = (int)((attack * attack) / (attack + defense));
         results.AttackerDmgInflicted = damageInflicted;
-        results.DefenderDmgTaken = Mathf.Min(damageInflicted, defender.HP);
-        results.DefenderDefeated = damageInflicted >= defender.HP;
+        results.DefenderDmgTaken = Mathf.Min(damageInflicted, defender.HPTrait.HP);
+        results.DefenderDefeated = damageInflicted >= defender.HPTrait.HP;
 
         attacker.ApplyBattleResults(results, BattleRole.Attacker);
         defender.ApplyBattleResults(results, BattleRole.Defender);

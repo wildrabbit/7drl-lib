@@ -29,13 +29,14 @@ public interface IEntityController
     void StartGame();
 
     Player CreatePlayer(PlayerData data, Vector2Int coords);
-    Monster CreateMonster(MonsterData data, Vector2Int coords, AIController aiController);
-    List<Monster> CreateMonsters(List<(MonsterData, Vector2Int)> list, AIController aiController);
+    Monster CreateMonster(MonsterData data, Vector2Int coords);
+    List<Monster> CreateMonsters(List<(MonsterData, Vector2Int)> list);
     T Create<T>(T prefab, BaseEntityData data, BaseEntityDependencies deps) where T : BaseEntity;
 
     bool ExistsNearbyEntity(Vector2Int coords, int radius, BaseEntity[] excluded = null);
     bool ExistsEntitiesAt(Vector2Int coords, BaseEntity[] excluded = null); // We could use the former with radius == 0, but with this we skip the distance calculations
     List<BaseEntity> GetEntitiesAt(Vector2Int actionTargetCoords, BaseEntity[] excluded = null);
+    List<BaseEntity> GetNearbyEntities(Vector2Int refCoords, int radius, BaseEntity[] excluded = null);
     void AddNewEntities();
     void DestroyEntity(BaseEntity entity);
     void PurgeEntities();

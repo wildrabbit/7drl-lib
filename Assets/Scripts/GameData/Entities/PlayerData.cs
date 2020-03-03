@@ -12,6 +12,7 @@ public class PlayerData: BaseEntityData
     public BaseAttackData[] Attacks;
     public HPTraitData HPData;
     public BaseMovingTraitData MovingTraitData;
+    public BattleTraitData BattleData;
     public float Speed;
 
 }

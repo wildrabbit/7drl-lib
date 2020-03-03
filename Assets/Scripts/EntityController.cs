@@ -54,31 +54,29 @@ public class EntityController : IEntityController
         return _player;
     }
 
-    public Monster CreateMonster(MonsterData data, Vector2Int coords, AIController aiController)
+    public Monster CreateMonster(MonsterData data, Vector2Int coords)
     {
-        MonsterDependencies deps = new MonsterDependencies()
+        BaseEntityDependencies deps = new BaseEntityDependencies()
         {
             ParentNode = null,
             EntityController = this,
             Coords = coords,
-            AIController = aiController,
             MapController = _mapController
         };
         var monster = Create<Monster>(_entityCreationData.MonsterPrefab, data, deps);
         return monster;
     }
 
-    public List<Monster> CreateMonsters(List<(MonsterData, Vector2Int)> list, AIController aiController)
+    public List<Monster> CreateMonsters(List<(MonsterData, Vector2Int)> list)
     {
         List<Monster> addedMonsters = new List<Monster>();
         foreach(var (data, coords) in list)
         {
-            MonsterDependencies deps = new MonsterDependencies()
+            BaseEntityDependencies deps = new BaseEntityDependencies()
             {
                 ParentNode = null,
                 EntityController = this,
                 Coords = coords,
-                AIController = aiController,
                 MapController = _mapController,
                 GameEvents = _gameEvents
             };
@@ -108,6 +106,19 @@ public class EntityController : IEntityController
             }
         }
         return false;
+    }
+
+    public List<BaseEntity> GetNearbyEntities(Vector2Int refCoords, int radius, BaseEntity[] excluded = null)
+    {
+        var filteredEntities = excluded != null ? GetFilteredEntities(excluded) : new List<BaseEntity>(_allEntities);
+        for(int i = filteredEntities.Count - 1; i>=0; --i)
+        {
+            if (_mapController.Distance(filteredEntities[i].Coords, refCoords) > radius)
+            {
+                filteredEntities.RemoveAt(i);
+            }
+        }
+        return filteredEntities;
     }
 
     public List<BaseEntity> GetEntitiesAt(Vector2Int actionTargetCoords, BaseEntity[] excluded = null)

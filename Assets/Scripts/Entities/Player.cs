@@ -18,7 +18,7 @@ public enum BombImmunityType
 }
 
 
-public class Player : BaseEntity, IBattleEntity, IHealthTrackingEntity
+public class Player : BaseEntity, IHealthTrackingEntity, IBattleEntity2
 {
     public int HP => _hpTrait.HP;
     public int MaxHP => _hpTrait.MaxHP;
@@ -40,16 +40,11 @@ public class Player : BaseEntity, IBattleEntity, IHealthTrackingEntity
     public bool CanMoveIntoMonsterCoords => _playerData.CanMoveIntoMonsterCoords;
     public int DmgFromMonsterCollision => _playerData.MonsterCollisionDmg;
 
-    int IBattleEntity.HP => HP;
-    int IBattleEntity.Damage => 0;
-    string IBattleEntity.Name => name;
-
     public HPTrait HPTrait => _hpTrait;
     public BaseMovingTrait MovingTrait => _movingTrait;
 
-
-    List<BaseAttack> _attacks;
-    int _currentAttackIdx;
+    public BattleTrait BattleTrait => _battleTrait;
+    BattleTrait _battleTrait;
     
     float _oldSpeed;
     float _speed;
@@ -67,6 +62,7 @@ public class Player : BaseEntity, IBattleEntity, IHealthTrackingEntity
         name = "Player";
         _hpTrait = new HPTrait();
         _hpTrait.Init(this, _playerData.HPData);
+
         _speed = _playerData.Speed;
 
         _movingTrait = _playerData.MovingTraitData.CreateRuntimeTrait();
@@ -74,22 +70,29 @@ public class Player : BaseEntity, IBattleEntity, IHealthTrackingEntity
 
         _playerEvents = deps.GameEvents.Player;
 
-        _attacks = new List<BaseAttack>();
-        foreach(var attackData in _playerData.Attacks)
-        {
-            _attacks.Add(attackData.SpawnRuntime());
-        }
+        _battleTrait = new BattleTrait();
+        _battleTrait.Init(_entityController, _playerData.BattleData, this);
     }
 
-    public override void AddTime(float timeUnits, ref int playContext)
+    public override void AddTime(float timeUnits, ref int playState)
     {
         if (_hpTrait.Regen)
         {
             _hpTrait.UpdateRegen(timeUnits);
         }
+        _battleTrait.TickCooldowns(timeUnits);
     }
 
+    internal bool ExistsHostilesAt(Vector2Int newPlayerCoords)
+    {
+        return _entityController.GetEntitiesAt(newPlayerCoords).Exists(x => x.IsHostileTo(this));
+    }
 
+    internal bool AttackCoords(Vector2Int newPlayerCoords)
+    {
+        var allDefeated = BattleTrait.TryAttackCoords(newPlayerCoords);
+        return allDefeated;
+    }
 
     public bool TakeDamage(int damage)
     {
@@ -120,7 +123,7 @@ public class Player : BaseEntity, IBattleEntity, IHealthTrackingEntity
         _entityController.PlayerDestroyed();
     }
 
-    void IBattleEntity.ApplyBattleResults(BattleActionResult results, BattleRole role)
+    public void ApplyBattleResults(BattleActionResult results, BattleRole role)
     {
         if(role == BattleRole.Defender)
         {
@@ -152,28 +155,38 @@ public class Player : BaseEntity, IBattleEntity, IHealthTrackingEntity
         return _playerData.MonsterCollisionDmg;
     }
 
-    public override bool TryResolveMoveIntoCoords(Vector2Int testCoords)
+    public bool ValidMapCoords(Vector2Int testCoords)
     {
         var tile = _mapController.GetTileAt(testCoords);
 
-        if(tile == null || !_movingTrait.EvaluateTile(tile))
-        {
-            return false;
-        }
+        return (tile != null && _movingTrait.EvaluateTile(tile));        
+    }
 
-        List<BaseEntity> otherEntities = _entityController.GetEntitiesAt(testCoords);
-        foreach(var other in otherEntities)
-        {
-            // Handle collision + entity actions!
-        }
-
-        Coords = testCoords;
-        //_playerEvents.SendPlayerMoved(testCoords, transform.position);
-        return true;
+    public bool CanAttackCoords(Vector2Int testCoords)
+    {
+        List<BaseEntity> otherEntities = _entityController.GetEntitiesAt(testCoords).FindAll(x => x.IsHostileTo(this));
+        return otherEntities.Count > 0;
     }
 
     public override float DistanceFromPlayer()
     {
         return 0; // :D
+    }
+
+    public List<IBattleEntity2> FindHostileTargetsInMaxRange(int radius)
+    {
+        var nearby = _entityController.GetNearbyEntities(Coords, radius);
+        List<IBattleEntity2> result = nearby.FindAll(x => x is Monster).ConvertAll(x => (IBattleEntity2)x);
+        return result;
+    }
+
+    public bool TryFindAttack(BaseAttack attack, out MoveDirection direction, out List<IBattleEntity2> targets)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override bool IsHostileTo(IBattleEntity2 other)
+    {
+        return other is Monster;
     }
 }

@@ -9,6 +9,8 @@ public class MonsterData: BaseEntityData
     public float ThinkingDelay;
     public HPTraitData HPData;
     public BaseMovingTraitData MovingTraitData;
+    public BattleTraitData BattleData;
+
     public AI.State InitialState;
     public AI.State NoState;
 
@@ -26,7 +28,7 @@ public class MonsterData: BaseEntityData
         }
     }
 
-    public BaseAttackData[] Attacks;
+
     public int PlayerCollisionDmg;
 
     public float PathUpdateDelay;

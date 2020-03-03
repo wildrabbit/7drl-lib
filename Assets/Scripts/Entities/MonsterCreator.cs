@@ -49,7 +49,6 @@ public class MonsterCreator: IScheduledEntity
 {
     const int ScatterLimitRadius = 2;
     private IEntityController _entityController;
-    private AIController _aiController;
     private IMapController _map;
     private BaseGameEvents.MonsterEvents _monsterEvents;
     private TimeController _timeController;
@@ -58,12 +57,11 @@ public class MonsterCreator: IScheduledEntity
 
     private List<MonsterSpawn> _spawnPoints;
 
-    public void Init(IEntityController entityController, AIController aiController, IMapController map, TimeController timeController, BaseGameEvents.MonsterEvents events, List<MonsterData> monsterData)
+    public void Init(IEntityController entityController, IMapController map, TimeController timeController, BaseGameEvents.MonsterEvents events, List<MonsterData> monsterData)
     {
         _timeController = timeController;
         _timeController.AddScheduledEntity(this);
 
-        _aiController = aiController;
         _entityController = entityController;
         _map = map;
         _monsterEvents = events;
@@ -160,7 +158,7 @@ public class MonsterCreator: IScheduledEntity
         }
 
         Debug.Log($"Spawning {numMonsters} monsters of type {monsterToChoose.DisplayName}");
-        _entityController.CreateMonsters(monsterList, _aiController);
+        _entityController.CreateMonsters(monsterList);
         spawn.SpawnCount++;
         spawn.RespawnTimeElapsed = 0.0f;
     }

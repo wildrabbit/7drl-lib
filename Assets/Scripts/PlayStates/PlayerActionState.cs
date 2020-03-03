@@ -68,6 +68,15 @@ public class PlayerActionState : IPlayState
             bool dropModifier = input.ShiftPressed;          
         }
 
+        // REMOVE
+        if(Input.GetKeyDown(KeyCode.P))
+        {
+            foreach(Monster m in entityController.Monsters)
+            {
+                m.ToggleDebug();
+            }
+        }
+
         return GameController.PlayStates.Action;
     }
 

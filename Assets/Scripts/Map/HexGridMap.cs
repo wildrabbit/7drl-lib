@@ -72,14 +72,14 @@ public class HexGridMap: IMapHelper
         return false;
     }
 
-    public Vector2Int GetDirectionOffset(MoveDirection moveDirection, Vector2Int srcCoords)
+    public Vector2Int GetDirectionOffset(MoveDirection moveDirection, Vector2Int srcCoords, bool diagonals)
     {
         bool isEven = srcCoords.y % 2 == 0;
         Vector2Int[] offsets = isEven ? _neighbourOffsets[0] : _neighbourOffsets[1];
         return offsets[(int)moveDirection];
     }
 
-    public Vector2Int[] GetOffsets(Vector2Int srcCoords)
+    public Vector2Int[] GetOffsets(Vector2Int srcCoords, bool diagonals)
     {
         return _neighbourOffsets[srcCoords.y & 1];
     }

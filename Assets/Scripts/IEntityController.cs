@@ -50,4 +50,6 @@ public interface IEntityController
     void CollisionMonsterPlayer(Player p, Monster m, int playerDmg, int monsterDmg);
 
     void EntityHealthEvent(BaseEntity entity, int healthDelta, bool isExplosion, bool isHeal, bool isPoison, bool isCollision);
+
+    IEnumerable<Monster> Monsters { get;  }
 }

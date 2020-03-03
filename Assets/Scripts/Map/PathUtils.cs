@@ -20,7 +20,7 @@ public static class PathUtils
         public override string ToString() => $"{Coords} <- {(From.HasValue ? From.Value.ToString() : "NONE")} [{Distance}]";
     }
 
-    public static void FindPath(IMapController map, Vector2Int from, Vector2Int to, ref List<Vector2Int> path)
+    public static void FindPath(IMapController map, Vector2Int from, Vector2Int to, ref List<Vector2Int> path, Predicate<Vector2Int> IsValidNavigationTile = null)
     {
         path.Clear();
         if (from == to)
@@ -35,13 +35,16 @@ public static class PathUtils
         List<Vector2Int> validTiles = new List<Vector2Int>();
         foreach (var position in mapBounds.allPositionsWithin)
         {
-            if (map.IsNavigationValidTile(position))
+            Vector2Int pos2D = (Vector2Int)position;
+
+            if (IsValidNavigationTile == null || !IsValidNavigationTile(pos2D))
             {
-                Vector2Int pos2D = (Vector2Int)position;
-                validTiles.Add(pos2D);
-                visitedInfo[pos2D] = new PathInfo(pos2D);
-                coordsQueue.Enqueue(pos2D, visitedInfo[pos2D].Distance);
+                continue;
             }
+
+            validTiles.Add(pos2D);
+            visitedInfo[pos2D] = new PathInfo(pos2D);
+            coordsQueue.Enqueue(pos2D, visitedInfo[pos2D].Distance);            
         }        
         visitedInfo[from].Distance = 0;
         coordsQueue.UpdateKey(from, visitedInfo[from].Distance);

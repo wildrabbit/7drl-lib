@@ -29,6 +29,11 @@ namespace AI
             Transitions.Sort((t1, t2) => t1.Priority.CompareTo(t2.Priority));
             foreach(var transition in Transitions)
             {
+                if(transition == null)
+                {
+                    Debug.LogWarning($"State {name} has a null transition. REMOVE");
+                    continue;
+                }
                 if(transition.Condition.Evaluate(stateController, timeUnits))
                 {
                     stateController.TransitionToNextState(transition.SuccessState);

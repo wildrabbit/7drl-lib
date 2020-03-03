@@ -13,6 +13,7 @@ public class EntityController : IEntityController
     List<BaseEntity> _entitiesToAdd;
 
     public Player Player => _player;
+    public IEnumerable<Monster> Monsters => _allEntities.FindAll(x => x is Monster).ConvertAll(baseE => (Monster)baseE);
 
     protected IMapController _mapController;
     protected BaseGameEvents _gameEvents;

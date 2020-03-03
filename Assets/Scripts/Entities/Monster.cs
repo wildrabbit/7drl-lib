@@ -2,7 +2,8 @@
 using System.Collections.Generic;
 using AI;
 using UnityEngine;
-
+using UnityEngine.Rendering;
+using UnityEngine.Tilemaps;
 
 public class BaseMonsterAction
 {
@@ -79,6 +80,9 @@ public class Monster : BaseEntity, IBattleEntity, IHealthTrackingEntity
     public bool UselessPath => _path != null && _path.Count < 2;
 
     public int Damage => _attacks[_currentAttackIdx].Data.AddedDamage /* +CharacterDamage */;
+
+    public Vector3[] PathWorld => _path?.ConvertAll(x => _mapController.WorldFromCoords(x)).ToArray();
+    public event System.Action PathChanged;
 
     MonsterData _monsterData; // Should we expose it?
 
@@ -173,6 +177,7 @@ public class Monster : BaseEntity, IBattleEntity, IHealthTrackingEntity
     public void OnExitState()
     {
         _path?.Clear();
+        PathChanged?.Invoke();
         _currentPathIdx = 0;
         _elapsedPathUpdate = 0.0f;
 
@@ -229,7 +234,7 @@ public class Monster : BaseEntity, IBattleEntity, IHealthTrackingEntity
     // TODO: Do we use this during the AI step??
     public override bool TryResolveMoveIntoCoords(Vector2Int coords)
     {
-        if (!_movingTrait.EvaluateTile(_mapController.GetTileAt(coords)))
+        if (!ValidNavigationCoords(coords))
         {
             return false;
         }
@@ -237,7 +242,10 @@ public class Monster : BaseEntity, IBattleEntity, IHealthTrackingEntity
         List<BaseEntity> otherEntities = _entityController.GetEntitiesAt(coords);
         foreach (var other in otherEntities)
         {
-            // Handle collision + entity actions!
+            if (other is Player p)
+            {
+                return false;
+            }
         }
 
         Coords = coords;
@@ -247,14 +255,19 @@ public class Monster : BaseEntity, IBattleEntity, IHealthTrackingEntity
     public void WanderStep()
     {
         var neighbour = _mapController.RandomNeighbour(Coords, x => !IsTileValidMoveTarget(x));
-        TryResolveMoveIntoCoords(Coords);
+        TryResolveMoveIntoCoords(neighbour);
         // TODO: Handle collisions?
+    }
+
+    public bool ValidNavigationCoords(Vector2Int coords)
+    {
+        TileBase tile = _mapController.GetTileAt(coords);
+        return _movingTrait.EvaluateTile(tile);
     }
 
     public bool IsTileValidMoveTarget(Vector2Int coords)
     {
-        bool matchesTile = _movingTrait.EvaluateTile(_mapController.GetTileAt(coords));
-        if (!matchesTile) return false;
+        if (!ValidNavigationCoords(coords)) return false;
 
         bool occupied = _entityController.ExistsEntitiesAt(coords);
         return !occupied || !(_entityController.GetEntitiesAt(coords, new BaseEntity[] { this }).Contains(_entityController.Player));
@@ -271,8 +284,8 @@ public class Monster : BaseEntity, IBattleEntity, IHealthTrackingEntity
         {
             _path = new List<Vector2Int>();
         }
-        PathUtils.FindPath(_mapController, Coords, _entityController.Player.Coords, ref _path);
-
+        PathUtils.FindPath(_mapController, Coords, _entityController.Player.Coords, ref _path, ValidNavigationCoords);
+        PathChanged?.Invoke();
         _currentPathIdx = 0;
         _elapsedPathUpdate = 0.0f;
     }
@@ -280,12 +293,14 @@ public class Monster : BaseEntity, IBattleEntity, IHealthTrackingEntity
     public void TickPathElapsed(float units)
     {
         _elapsedPathUpdate += units;
-        _currentPathIdx++;
     }
 
     public void FollowPath()
     {
-        TryResolveMoveIntoCoords(_path[_currentPathIdx]);
+        if(TryResolveMoveIntoCoords(_path[_currentPathIdx]))
+        {
+            _currentPathIdx++;
+        }
     }
 
     public bool TrySelectAvailableAttack()
@@ -317,8 +332,15 @@ public class Monster : BaseEntity, IBattleEntity, IHealthTrackingEntity
     public void LaunchAttack()
     {
         BattleUtils.SolveAttack(this, _entityController.Player, out var result);
-        IBattleEntity be = this;
-        be.ApplyBattleResults(result, BattleRole.Attacker);
         _attacks[_currentAttackIdx].Elapsed = 0;
     }
+
+    public bool DebugPaths = false;
+    public Material DebugMaterial;
+    
+    public void ToggleDebug()
+    {
+        DebugPaths = !DebugPaths;
+    }
+
 }

@@ -11,17 +11,37 @@ public enum DistanceStrategy
 public class RectGridMap : IMapHelper
 {
     DistanceStrategy _strategy;
+    bool IncludeDiagonals;
     public RectGridMap(DistanceStrategy strategy)
     {
         _strategy = strategy;
     }
 
-    Vector2Int[] _neighbourOffsets = new Vector2Int[]
+    MoveDirection[] _diagonalDirections = new MoveDirection[]
     {
+        MoveDirection.None,
+        MoveDirection.N, MoveDirection.NE, MoveDirection.SE,
+        MoveDirection.S, MoveDirection.SW, MoveDirection.NW,
+        MoveDirection.E, MoveDirection.E
+    };
+
+    MoveDirection[] _noDiagonalDirections = new MoveDirection[]
+    {
+        MoveDirection.None, MoveDirection.N, MoveDirection.E, MoveDirection.S, MoveDirection.W
+    };
+
+    Vector2Int[] _neighbourOffsetsDiagonals = new Vector2Int[]
+{
         new Vector2Int(0, 0),
         new Vector2Int(1, 0), new Vector2Int(1, 1), new Vector2Int(-1,1),
         new Vector2Int(-1, 0), new Vector2Int(-1, -1), new Vector2Int(1, -1),
         new Vector2Int(0,1), new Vector2Int(0,-1)
+};
+
+    Vector2Int[] _neighbourOffsetsNoDiagonals = new Vector2Int[]
+    {
+        new Vector2Int(0, 0),
+        new Vector2Int(1, 0), new Vector2Int(0, 1), new Vector2Int(-1, 0), new Vector2Int(0,-1)
     };
 
     public int Distance(Vector2Int c1, Vector2Int c2)
@@ -42,13 +62,20 @@ public class RectGridMap : IMapHelper
         }
         return distance;
     }
-    public Vector2Int GetDirectionOffset(MoveDirection moveDirection, Vector2Int srcCoords)
+    public Vector2Int GetDirectionOffset(MoveDirection moveDirection, Vector2Int srcCoords, bool diagonals)
     {
-        return _neighbourOffsets[(int)moveDirection];
+        MoveDirection[] dirList = diagonals ? _diagonalDirections : _noDiagonalDirections;
+        int idx = System.Array.IndexOf(dirList, moveDirection);
+        if (idx >= 0)
+        {
+            return GetOffsets(srcCoords, diagonals)[idx];
+        }
+        return Vector2Int.zero;
+        
     }
 
-    public Vector2Int[] GetOffsets(Vector2Int coords)
+    public Vector2Int[] GetOffsets(Vector2Int coords, bool diagonals)
     {
-        return _neighbourOffsets;
+        return diagonals? _neighbourOffsetsDiagonals : _neighbourOffsetsNoDiagonals;
     }
 }

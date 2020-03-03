@@ -54,26 +54,16 @@ public class Monster : BaseEntity, IBattleEntity, IHealthTrackingEntity
     AI.State _noState => _monsterData.NoState;
     float _currentStateTimeUnitsElapsed;
 
-
-    public bool IsMelee => _monsterData.IsMelee;
-    
-    public int TurnsInSameState => _turnsInSameState;
-    public int TurnLimit => _turnLimit;
-    public float EscapeHPRatio => _monsterData.EscapeHPRatio;
-    public int EscapeSafeDistance => _monsterData.EscapeSafeDistance;
-    public int VisibilityRange => _monsterData.VisibilityRange;
     public List<Vector2Int> Path => _path;
     public int CurrentPathIdx => _currentPathIdx;
     public float PathDelay => _monsterData.PathUpdateDelay;
     public float PathElapsed => _elapsedPathUpdate;
 
+    public List<BaseAttack> _attacks;
+    public int _currentAttackIdx;
+
     int IBattleEntity.HP => HP;
-
-    int IBattleEntity.Damage => _monsterData.MeleeDamage;
-
     string IBattleEntity.Name => name;
-
-
 
     public HPTrait HPTrait => _hpTrait;
     public BaseMovingTrait MovingTrait => _movingTrait;
@@ -87,6 +77,8 @@ public class Monster : BaseEntity, IBattleEntity, IHealthTrackingEntity
     }
 
     public bool UselessPath => _path != null && _path.Count < 2;
+
+    public int Damage => _attacks[_currentAttackIdx].Data.AddedDamage /* +CharacterDamage */;
 
     MonsterData _monsterData; // Should we expose it?
 
@@ -104,14 +96,6 @@ public class Monster : BaseEntity, IBattleEntity, IHealthTrackingEntity
     List<Vector2Int> _path;
     int _currentPathIdx;
 
-    public int AttackDistance()
-    {
-        if (_monsterData.IsMelee)
-        {
-            return 1;
-        }
-        return 0; // attack distance == 0? 
-    }
 
     AIController _aiController;
     
@@ -125,7 +109,6 @@ public class Monster : BaseEntity, IBattleEntity, IHealthTrackingEntity
         _hpTrait = new HPTrait();
         _hpTrait.Init(this, _monsterData.HPData);
 
-
         _decisionDelay = _monsterData.ThinkingDelay;
         _elapsedNextAction = 0.0f;
         _elapsedPathUpdate = 0.0f;
@@ -135,6 +118,12 @@ public class Monster : BaseEntity, IBattleEntity, IHealthTrackingEntity
 
         _currentState = _monsterData.InitialState;
         _currentStateTimeUnitsElapsed = 0.0f;
+
+        _attacks = new List<BaseAttack>();
+        foreach(var attackData in _monsterData.Attacks)
+        {
+            _attacks.Add(attackData.SpawnRuntime());
+        }
     }
 
     public void SetAIController(AIController aiController)
@@ -145,6 +134,17 @@ public class Monster : BaseEntity, IBattleEntity, IHealthTrackingEntity
     public override void AddTime(float timeUnits, ref int playContext)
     {
         _elapsedNextAction += timeUnits;
+        foreach(var attack in _attacks)
+        {
+            if(attack.Elapsed >= 0)
+            {
+                attack.Elapsed += timeUnits;
+            }
+            if (attack.Elapsed >= attack.Data.Cooldown)
+            {
+                attack.Elapsed = -1;
+            }
+        }
 
         while (_elapsedNextAction >= _decisionDelay)
         {
@@ -226,15 +226,6 @@ public class Monster : BaseEntity, IBattleEntity, IHealthTrackingEntity
         Debug.Log($"Monster speed rate restored to {_decisionDelay}");
     }
 
-    public int PlayerCollided(Player p)
-    {
-        if(_monsterData.PlayerCollisionDmg > 0)
-        {
-            TakeDamage(_monsterData.PlayerCollisionDmg);
-        }
-        return _monsterData.PlayerCollisionDmg;
-    }
-
     // TODO: Do we use this during the AI step??
     public override bool TryResolveMoveIntoCoords(Vector2Int coords)
     {
@@ -249,13 +240,14 @@ public class Monster : BaseEntity, IBattleEntity, IHealthTrackingEntity
             // Handle collision + entity actions!
         }
 
+        Coords = coords;
         return true;
     }
 
     public void WanderStep()
     {
         var neighbour = _mapController.RandomNeighbour(Coords, x => !IsTileValidMoveTarget(x));
-        Coords = neighbour;  
+        TryResolveMoveIntoCoords(Coords);
         // TODO: Handle collisions?
     }
 
@@ -293,6 +285,40 @@ public class Monster : BaseEntity, IBattleEntity, IHealthTrackingEntity
 
     public void FollowPath()
     {
-        Coords = _path[_currentPathIdx];
+        TryResolveMoveIntoCoords(_path[_currentPathIdx]);
+    }
+
+    public bool TrySelectAvailableAttack()
+    {
+        int bestIdx = -1;
+        int bestDmg = 0;
+        for(int i = 0; i < _attacks.Count; ++i)
+        {
+            if (!_attacks[i].Ready) continue;
+            if(_attacks[i].CanTargetBeReached(Coords, _entityController.Player.Coords, out var dir))
+            {
+                if(_attacks[i].Data.AddedDamage >= bestDmg)
+                {
+                    bestIdx = i;
+                    bestDmg = _attacks[i].Data.AddedDamage;
+                }
+            }
+        }
+
+        if(bestIdx >= 0)
+        {
+            _currentAttackIdx = bestIdx;
+            return true;
+        }
+
+        return false;
+    }
+
+    public void LaunchAttack()
+    {
+        BattleUtils.SolveAttack(this, _entityController.Player, out var result);
+        IBattleEntity be = this;
+        be.ApplyBattleResults(result, BattleRole.Attacker);
+        _attacks[_currentAttackIdx].Elapsed = 0;
     }
 }

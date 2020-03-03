@@ -9,6 +9,7 @@ public class PlayerData: BaseEntityData
     public bool CanMoveIntoMonsterCoords;
     public int MonsterCollisionDmg;
 
+    public BaseAttackData[] Attacks;
     public HPTraitData HPData;
     public BaseMovingTraitData MovingTraitData;
     public float Speed;

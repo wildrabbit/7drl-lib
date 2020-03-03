@@ -47,9 +47,10 @@ public class Player : BaseEntity, IBattleEntity, IHealthTrackingEntity
     public HPTrait HPTrait => _hpTrait;
     public BaseMovingTrait MovingTrait => _movingTrait;
 
-    BombImmunityType _bombImmunity;
-    BombWalkabilityType _walkOverBombs;
 
+    List<BaseAttack> _attacks;
+    int _currentAttackIdx;
+    
     float _oldSpeed;
     float _speed;
 
@@ -72,6 +73,12 @@ public class Player : BaseEntity, IBattleEntity, IHealthTrackingEntity
         _movingTrait.Init(_playerData.MovingTraitData);
 
         _playerEvents = deps.GameEvents.Player;
+
+        _attacks = new List<BaseAttack>();
+        foreach(var attackData in _playerData.Attacks)
+        {
+            _attacks.Add(attackData.SpawnRuntime());
+        }
     }
 
     public override void AddTime(float timeUnits, ref int playContext)

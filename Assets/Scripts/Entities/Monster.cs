@@ -78,6 +78,15 @@ public class Monster : BaseEntity, IBattleEntity, IHealthTrackingEntity
     public HPTrait HPTrait => _hpTrait;
     public BaseMovingTrait MovingTrait => _movingTrait;
 
+    public bool ValidPath
+    {
+        get
+        {
+            return _path != null && _path.Count > 0 && _currentPathIdx >= 0 && _currentPathIdx < (_path.Count - 1) && _elapsedPathUpdate < PathDelay;
+        }
+    }
+
+    public bool UselessPath => _path != null && _path.Count < 2;
 
     MonsterData _monsterData; // Should we expose it?
 
@@ -150,6 +159,7 @@ public class Monster : BaseEntity, IBattleEntity, IHealthTrackingEntity
     {
         if (next != _noState)
         {
+            Debug.Log($"<color=purple>FSM:</color>Monster {_monsterData.DisplayName} at {Coords} changes State from {_currentState.name} to {next.name}");
             _currentState = next;
             OnExitState();
         }
@@ -252,5 +262,33 @@ public class Monster : BaseEntity, IBattleEntity, IHealthTrackingEntity
 
         bool occupied = _entityController.ExistsEntitiesAt(coords);
         return !occupied || !(_entityController.GetEntitiesAt(coords, new BaseEntity[] { this }).Contains(_entityController.Player));
+    }
+
+    public override float DistanceFromPlayer()
+    {
+        return _mapController.Distance(Coords, _entityController.Player.Coords);
+    }
+
+    public void RecalculatePath()
+    {
+        if(_path == null)
+        {
+            _path = new List<Vector2Int>();
+        }
+        PathUtils.FindPath(_mapController, Coords, _entityController.Player.Coords, ref _path);
+
+        _currentPathIdx = 0;
+        _elapsedPathUpdate = 0.0f;
+    }
+
+    public void TickPathElapsed(float units)
+    {
+        _elapsedPathUpdate += units;
+        _currentPathIdx++;
+    }
+
+    public void FollowPath()
+    {
+        Coords = _path[_currentPathIdx];
     }
 }

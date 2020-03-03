@@ -164,4 +164,9 @@ public class Player : BaseEntity, IBattleEntity, IHealthTrackingEntity
         //_playerEvents.SendPlayerMoved(testCoords, transform.position);
         return true;
     }
+
+    public override float DistanceFromPlayer()
+    {
+        return 0; // :D
+    }
 }

@@ -111,4 +111,6 @@ public abstract class BaseEntity : MonoBehaviour, IScheduledEntity
 
     public abstract bool TryResolveMoveIntoCoords(Vector2Int coords);
 
+    public abstract float DistanceFromPlayer();
+
 }

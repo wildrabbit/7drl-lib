@@ -4,6 +4,6 @@
 
 public class BaseEntityData: ScriptableObject
 {
-    public Transform DefaultViewPrefab;
+    public GameObject DefaultViewPrefab;
     public string DisplayName;
 }

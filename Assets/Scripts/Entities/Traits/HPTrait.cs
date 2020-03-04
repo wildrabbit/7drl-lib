@@ -2,9 +2,6 @@
 using UnityEngine;
 using static BaseGameEvents;
 
-public delegate void ExhaustedHP(IHealthTrackingEntity owner);
-public delegate void HPChangedDelegate(int newHP, IHealthTrackingEntity Owner);
-
 public class HPTrait
 {
     public HPTraitData _data;
@@ -13,6 +10,8 @@ public class HPTrait
     public int HP => _hp;
     public int MaxHP => _maxHP;
     public bool Regen => _regen;
+
+    public float HPRatio => _hp / (float)_maxHP;
 
     IHealthTrackingEntity _owner;
     HPEvents _events;

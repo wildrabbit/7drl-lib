@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 
-public enum EventCategory
+public enum EventLogCategory
 {
     GameSetup,
     PlayerAction,
@@ -11,16 +11,16 @@ public enum EventCategory
     GameEnd
 }
 
-public abstract class BaseEvent
+public abstract class EventLogMessage
 {
-    public abstract EventCategory Category { get; }
+    public abstract EventLogCategory Category { get; }
     public abstract string Message();
 
     public int Turns;
     public float Time;
 
-    public BaseEvent() { }
-    public BaseEvent(int turns, float timeUnits)
+    public EventLogMessage() { }
+    public EventLogMessage(int turns, float timeUnits)
     {
         Turns = turns;
         Time = timeUnits;
@@ -33,9 +33,9 @@ public abstract class BaseEvent
 
 }
 
-public class GameSetupEvent : BaseEvent
+public class GameSetupEvent : EventLogMessage
 {
-    public override EventCategory Category => EventCategory.GameSetup;
+    public override EventLogCategory Category => EventLogCategory.GameSetup;
     public int Seed; // Random stuff (TODO)
 
     public Vector2Int PlayerCoords;
@@ -58,9 +58,9 @@ public class GameSetupEvent : BaseEvent
     }
 }
 
-public class GameFinishedEvent : BaseEvent
+public class GameFinishedEvent : EventLogMessage
 {
-    public override EventCategory Category => EventCategory.GameEnd;
+    public override EventLogCategory Category => EventLogCategory.GameEnd;
     public GameResult Result;
     string _endMessage;
 
@@ -80,7 +80,7 @@ public class GameFinishedEvent : BaseEvent
 }
 
 
-public delegate void EventAddedDelegate(BaseEvent lastAdded);
+public delegate void EventAddedDelegate(EventLogMessage lastAdded);
 public delegate void SessionStartedDelegate();
 public delegate void SessionFinishedDelegate();
 
@@ -92,12 +92,12 @@ public class GameEventLog
 
     protected TimeController _timeController;
     protected BaseGameEvents _gameEvents;
-    List<BaseEvent> _eventRecord;
+    List<EventLogMessage> _eventRecord;
 
     public virtual void Init(TimeController timeController, BaseGameEvents events)
     {
         _gameEvents = events;
-        _eventRecord = new List<BaseEvent>();
+        _eventRecord = new List<EventLogMessage>();
         _timeController = timeController;
     }
 
@@ -108,7 +108,7 @@ public class GameEventLog
         AddEvent(evt);
     }
 
-    public void AddEvent(BaseEvent evt)
+    public void AddEvent(EventLogMessage evt)
     {
         _eventRecord.Add(evt);
         OnEventAdded?.Invoke(evt);

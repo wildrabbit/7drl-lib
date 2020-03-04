@@ -29,7 +29,8 @@ public class PlayerActionState : IPlayState
         IMapController map = actionData.Map;
         IEntityController entityController = actionData.EntityController;
         Player player = entityController.Player;
-        
+
+        int nextPlayState = GameController.PlayStates.Action;
         
         timeWillPass = false;
 
@@ -44,7 +45,7 @@ public class PlayerActionState : IPlayState
 
 
         // GAME SPECIFIC
-        if(HandleExtendedActions(actionData, out timeWillPass, out var nextPlayState))
+        if(HandleExtendedActions(actionData, out timeWillPass, out nextPlayState))
         {
             return nextPlayState;
         }
@@ -64,12 +65,21 @@ public class PlayerActionState : IPlayState
 
                 // Check interactions
                 bool canMove = true;
-                if(player.CanAttackCoords(newPlayerCoords))
+                bool exit = HandleAdditionalMoveInteractions(actionData, newPlayerCoords, ref nextPlayState, ref canMove);
+                if(exit)
+                {
+                    if(canMove)
+                    {
+                        player.Coords = newPlayerCoords;
+                    }
+                    return nextPlayState;
+                }
+
+                if (player.CanAttackCoords(newPlayerCoords))
                 {
                     bool allDefeated = player.AttackCoords(newPlayerCoords);
                     canMove = allDefeated;
                 }
-                // ...others
 
                 if(canMove)
                 {
@@ -85,16 +95,13 @@ public class PlayerActionState : IPlayState
             bool dropModifier = input.ShiftPressed;          
         }
 
-        // REMOVE
-        if(Input.GetKeyDown(KeyCode.P))
-        {
-            foreach(Monster m in entityController.Monsters)
-            {
-                m.ToggleDebug();
-            }
-        }
-
         return GameController.PlayStates.Action;
+    }
+
+    protected virtual bool HandleAdditionalMoveInteractions(PlayerActionStateContext contextData, Vector2Int newPlayerCoords, ref int nextPlayState, ref bool canMove)
+    {
+        bool immediateExit = false;
+        return immediateExit;
     }
 
     protected virtual bool HandleExtendedActions(PlayerActionStateContext contextData, out bool timeWillPass, out int nextPlayContext)

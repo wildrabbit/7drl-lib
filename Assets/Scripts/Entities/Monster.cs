@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using AI;
 using UnityEngine;
-using UnityEngine.Rendering;
 using UnityEngine.Tilemaps;
 
 public enum MonsterState
@@ -52,12 +50,13 @@ public class Monster : BaseEntity,  IHealthTrackingEntity, IBattleEntity
     public bool UselessPath => _path != null && _path.Count < 2;
 
     public Vector3[] PathWorld => _path?.ConvertAll(x => _mapController.WorldFromCoords(x)).ToArray();
+
     public event System.Action PathChanged;
 
-    MonsterData _monsterData; // Should we expose it?
+    protected MonsterData _monsterData; // Should we expose it?
 
-    HPTrait _hpTrait;
-    BaseMovingTrait _movingTrait;
+    protected HPTrait _hpTrait;
+    protected BaseMovingTrait _movingTrait;
 
     float _elapsedNextAction;
 
@@ -67,10 +66,10 @@ public class Monster : BaseEntity,  IHealthTrackingEntity, IBattleEntity
     int _turnLimit;
     int _turnsInSameState;
 
-    List<Vector2Int> _path;
-    int _currentPathIdx;
+    protected List<Vector2Int> _path;
+    protected int _currentPathIdx;
 
-    BaseGameEvents.MonsterEvents _monsterEvents;
+    protected BaseGameEvents.MonsterEvents _monsterEvents;
     
     protected override void DoInit(BaseEntityDependencies deps)
     {
@@ -84,8 +83,7 @@ public class Monster : BaseEntity,  IHealthTrackingEntity, IBattleEntity
         _elapsedPathUpdate = 0.0f;
 
         _movingTrait = _monsterData.MovingTraitData.CreateRuntimeTrait();
-        _movingTrait.Init(_monsterData.MovingTraitData);
-
+        
         _monsterEvents = deps.GameEvents.Monsters;
 
         _currentState = _monsterData.InitialState;

@@ -39,7 +39,7 @@ public abstract class BaseEntity : MonoBehaviour, IScheduledEntity
         set => _active = value;
     }
 
-    protected Transform _view;
+    protected GameObject _view;
     protected BaseEntityData _entityData;
     protected IEntityController _entityController;
     protected IMapController _mapController;
@@ -69,8 +69,14 @@ public abstract class BaseEntity : MonoBehaviour, IScheduledEntity
     public virtual void CreateView()
     {
         _view = Instantiate(_entityData.DefaultViewPrefab, transform, false);
-        _view.localPosition = Vector3.zero;
-        _view.localScale = Vector3.one;
+        _view.transform.localPosition = Vector3.zero;
+        _view.transform.localScale = Vector3.one;
+        ViewCreated();
+    }
+
+    protected virtual void ViewCreated()
+    {
+
     }
 
     public virtual void Cleanup()

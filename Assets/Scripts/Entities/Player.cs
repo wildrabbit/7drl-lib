@@ -44,15 +44,16 @@ public class Player : BaseEntity, IHealthTrackingEntity, IBattleEntity
     public BaseMovingTrait MovingTrait => _movingTrait;
 
     public BattleTrait BattleTrait => _battleTrait;
-    BattleTrait _battleTrait;
-    
-    float _oldSpeed;
-    float _speed;
+
+    protected BattleTrait _battleTrait;
+
+    protected float _oldSpeed;
+    protected float _speed;
 
     PlayerData _playerData;
-    HPTrait _hpTrait;
-    BaseMovingTrait _movingTrait;
-    BaseGameEvents.PlayerEvents _playerEvents;
+    protected HPTrait _hpTrait;
+    protected BaseMovingTrait _movingTrait;
+    protected BaseGameEvents.PlayerEvents _playerEvents;
 
 
     protected override void DoInit(BaseEntityDependencies deps)
@@ -66,7 +67,6 @@ public class Player : BaseEntity, IHealthTrackingEntity, IBattleEntity
         _speed = _playerData.Speed;
 
         _movingTrait = _playerData.MovingTraitData.CreateRuntimeTrait();
-        _movingTrait.Init(_playerData.MovingTraitData);
 
         _playerEvents = deps.GameEvents.Player;
 
@@ -189,4 +189,5 @@ public class Player : BaseEntity, IHealthTrackingEntity, IBattleEntity
     {
         return other is Monster;
     }
+
 }

@@ -71,7 +71,7 @@ public class HUD : MonoBehaviour
         _logger.OnEventAdded -= UpdateLog;
     }
 
-    private void UpdateLog(BaseEvent lastAdded)
+    private void UpdateLog(EventLogMessage lastAdded)
     {
         List<string> entries = _logger.GetLastItemMessages(_lastMessagesToDisplay);
         string entryMessage = string.Join("", entries);

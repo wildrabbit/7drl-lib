@@ -6,7 +6,7 @@ public class EntityController : IEntityController
 {
     protected BaseEntityCreationData _entityCreationData;
 
-    Player _player;
+    protected Player _player;
     List<BaseEntity> _allEntities;
 
     List<BaseEntity> _entitiesToRemove;
@@ -22,6 +22,8 @@ public class EntityController : IEntityController
     public event MonsterDestroyedDelegate OnMonsterKilled;
     public event PlayerMonsterCollision OnPlayerMonsterCollision;
     public event EntityHealthDelegate OnEntityHealth;
+
+    public List<BaseEntity> AllEntities => _allEntities;
 
     public void Init(IMapController mapController, BaseEntityCreationData entityCreationData, BaseGameEvents gameEvents)
     {
@@ -54,7 +56,7 @@ public class EntityController : IEntityController
         return _player;
     }
 
-    public Monster CreateMonster(MonsterData data, Vector2Int coords)
+    public virtual Monster CreateMonster(MonsterData data, Vector2Int coords)
     {
         BaseEntityDependencies deps = new BaseEntityDependencies()
         {
@@ -86,9 +88,9 @@ public class EntityController : IEntityController
         return addedMonsters;
     }
 
-    public T Create<T>(T prefab, BaseEntityData data, BaseEntityDependencies deps) where T : BaseEntity
+    public T Create<T>(BaseEntity prefab, BaseEntityData data, BaseEntityDependencies deps) where T : BaseEntity
     {
-        T entity = GameObject.Instantiate<T>(prefab);
+        T entity = GameObject.Instantiate<T>((T)prefab);
         entity.Init(data, deps);
         _entitiesToAdd.Add(entity);
         entity.OnCreated();

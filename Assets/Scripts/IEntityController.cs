@@ -24,6 +24,7 @@ public interface IEntityController
     event EntityHealthDelegate OnEntityHealth;
 
     Player Player { get; }
+    List<BaseEntity> AllEntities { get; }
 
     void Init(IMapController mapController, BaseEntityCreationData creationData, BaseGameEvents gameEvents);
     void StartGame();
@@ -31,7 +32,7 @@ public interface IEntityController
     Player CreatePlayer(PlayerData data, Vector2Int coords);
     Monster CreateMonster(MonsterData data, Vector2Int coords);
     List<Monster> CreateMonsters(List<(MonsterData, Vector2Int)> list);
-    T Create<T>(T prefab, BaseEntityData data, BaseEntityDependencies deps) where T : BaseEntity;
+    T Create<T>(BaseEntity prefab, BaseEntityData data, BaseEntityDependencies deps) where T : BaseEntity;
 
     bool ExistsNearbyEntity(Vector2Int coords, int radius, BaseEntity[] excluded = null);
     bool ExistsEntitiesAt(Vector2Int coords, BaseEntity[] excluded = null); // We could use the former with radius == 0, but with this we skip the distance calculations

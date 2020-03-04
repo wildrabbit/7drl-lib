@@ -28,7 +28,7 @@ public class MonsterData: BaseEntityData
         }
     }
 
-
+    
     public int PlayerCollisionDmg;
 
     public float PathUpdateDelay;
@@ -45,7 +45,7 @@ public class MonsterData: BaseEntityData
 
     public bool MatchesTagSet(IEnumerable<string> reference)
     {
-        return _tags.IsSupersetOf(reference);
+        return _tags == null || reference == null || _tags.IsSupersetOf(reference);
     }
 
     public bool CheckTag(string tag)

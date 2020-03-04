@@ -19,6 +19,7 @@ public abstract class BaseEvent
     public int Turns;
     public float Time;
 
+    public BaseEvent() { }
     public BaseEvent(int turns, float timeUnits)
     {
         Turns = turns;
@@ -89,14 +90,15 @@ public class GameEventLog
     public event SessionStartedDelegate OnSessionStarted;
     public event SessionFinishedDelegate OnSessionFinished;
 
-
-    BaseGameEvents _gameEvents;
+    protected TimeController _timeController;
+    protected BaseGameEvents _gameEvents;
     List<BaseEvent> _eventRecord;
 
-    public virtual void Init(BaseGameEvents events)
+    public virtual void Init(TimeController timeController, BaseGameEvents events)
     {
         _gameEvents = events;
         _eventRecord = new List<BaseEvent>();
+        _timeController = timeController;
     }
 
     public void StartSession(GameSetupEvent evt)
@@ -116,6 +118,11 @@ public class GameEventLog
     {
         AddEvent(evt);
         OnSessionFinished?.Invoke();
+    }
+
+    public virtual void Cleanup()
+    {
+        Clear();
     }
 
     public void Clear()

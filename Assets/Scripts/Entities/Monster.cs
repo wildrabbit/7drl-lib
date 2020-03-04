@@ -16,7 +16,7 @@ public enum MonsterState
 }
 
 
-public class Monster : BaseEntity,  IHealthTrackingEntity, IBattleEntity2
+public class Monster : BaseEntity,  IHealthTrackingEntity, IBattleEntity
 {
 
     public SpriteRenderer ViewPrefab;
@@ -33,7 +33,7 @@ public class Monster : BaseEntity,  IHealthTrackingEntity, IBattleEntity2
     public float PathDelay => _monsterData.PathUpdateDelay;
     public float PathElapsed => _elapsedPathUpdate;
 
-    string IBattleEntity2.Name => name;
+    string IBattleEntity.Name => name;
 
     public HPTrait HPTrait => _hpTrait;
     public BaseMovingTrait MovingTrait => _movingTrait;
@@ -77,7 +77,7 @@ public class Monster : BaseEntity,  IHealthTrackingEntity, IBattleEntity2
         _monsterData = ((MonsterData)_entityData);
         name = _monsterData.name;
         _hpTrait = new HPTrait();
-        _hpTrait.Init(this, _monsterData.HPData);
+        _hpTrait.Init(this, _monsterData.HPData, deps.GameEvents.Health);
 
         _decisionDelay = _monsterData.ThinkingDelay;
         _elapsedNextAction = 0.0f;
@@ -92,7 +92,7 @@ public class Monster : BaseEntity,  IHealthTrackingEntity, IBattleEntity2
         _currentStateTimeUnitsElapsed = 0.0f;
 
         _battleTrait = new BattleTrait();
-        _battleTrait.Init(_entityController, _monsterData.BattleData, this);
+        _battleTrait.Init(_entityController, _monsterData.BattleData, this, deps.GameEvents.Battle);
     }
 
     public override void AddTime(float timeUnits, ref int playContext)
@@ -148,7 +148,7 @@ public class Monster : BaseEntity,  IHealthTrackingEntity, IBattleEntity2
         base.Cleanup();
     }
 
-    void IBattleEntity2.ApplyBattleResults(BattleActionResult results, BattleRole role)
+    void IBattleEntity.ApplyBattleResults(BattleActionResult results, BattleRole role)
     {
         if(role == BattleRole.Defender)
         {
@@ -260,9 +260,9 @@ public class Monster : BaseEntity,  IHealthTrackingEntity, IBattleEntity2
     }
 
 
-    public List<IBattleEntity2> FindHostileTargetsInMaxRange(int radius)
+    public List<IBattleEntity> FindHostileTargetsInMaxRange(int radius)
     {
-        List<IBattleEntity2> result = new List<IBattleEntity2>();
+        List<IBattleEntity> result = new List<IBattleEntity>();
         if(_mapController.Distance(_entityController.Player.Coords, Coords) <= radius)
         {
             result.Add(_entityController.Player); // easy :D
@@ -270,7 +270,7 @@ public class Monster : BaseEntity,  IHealthTrackingEntity, IBattleEntity2
         return result;
     }
 
-    public bool TryFindAttack(BaseAttack attack, out MoveDirection direction, out List<IBattleEntity2> targets)
+    public bool TryFindAttack(BaseAttack attack, out MoveDirection direction, out List<IBattleEntity> targets)
     {
         throw new NotImplementedException();
     }
@@ -280,7 +280,7 @@ public class Monster : BaseEntity,  IHealthTrackingEntity, IBattleEntity2
         throw new NotImplementedException();
     }
 
-    public override bool IsHostileTo(IBattleEntity2 other)
+    public override bool IsHostileTo(IBattleEntity other)
     {
         return other is Player;
     }

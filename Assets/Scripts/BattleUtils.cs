@@ -29,7 +29,7 @@ public class BattleActionResult
 
 public class BattleUtils
 {
-    public static void SolveAttack(IBattleEntity2 attacker, IBattleEntity2 defender, out BattleActionResult results)
+    public static void SolveAttack(IBattleEntity attacker, IBattleEntity defender, out BattleActionResult results)
     {
         results = new BattleActionResult();
         results.AttackerName = attacker.Name;

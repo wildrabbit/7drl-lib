@@ -112,5 +112,5 @@ public abstract class BaseEntity : MonoBehaviour, IScheduledEntity
     }
 
     public abstract float DistanceFromPlayer();
-    public abstract bool IsHostileTo(IBattleEntity2 other);
+    public abstract bool IsHostileTo(IBattleEntity other);
 }

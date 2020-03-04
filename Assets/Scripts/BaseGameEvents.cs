@@ -8,6 +8,7 @@ public class BaseGameEvents
     {
         public event Action Died; // TODO: Action<PlayerDeathEvent>
         public event Action<Vector2Int, Vector3> Moved;
+        public event Action IdleTurn;
 
         public void SendPlayerDied()
         {
@@ -18,7 +19,11 @@ public class BaseGameEvents
         {
             Moved?.Invoke(coords, pos);
         }
-        //.....
+        
+        public void SendIdleTurn()
+        {
+            IdleTurn?.Invoke();
+        }
     }
 
     public class TimeEvents
@@ -89,6 +94,7 @@ public class BaseGameEvents
     {
         public event Action<IHealthTrackingEntity, int , bool, bool, bool> HealthEvent;
         public event Action<IHealthTrackingEntity> HealthExhausted;
+        public event Action<IHealthTrackingEntity> MaxHealthChanged;
 
         public void SendHealthEvent(IHealthTrackingEntity entity, int delta, bool healed, bool attacked, bool regen)
         {
@@ -98,11 +104,21 @@ public class BaseGameEvents
         {
             HealthExhausted?.Invoke(entity);
         }
+
+        public void SendMaxHPChanged(IHealthTrackingEntity owner)
+        {
+            MaxHealthChanged?.Invoke(owner);
+        }
     }
 
     public class BattleEvents
     {
+        public event Action<IBattleEntity, IBattleEntity, BattleActionResult> Attack;
 
+        public void SendAttack(IBattleEntity attacker, IBattleEntity defender, BattleActionResult result)
+        {
+            Attack?.Invoke(attacker, defender, result);
+        }
     }
 
     public TimeEvents Time;

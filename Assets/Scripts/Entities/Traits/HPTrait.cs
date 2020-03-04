@@ -1,5 +1,6 @@
 ﻿using System;
 using UnityEngine;
+using static BaseGameEvents;
 
 public delegate void ExhaustedHP(IHealthTrackingEntity owner);
 public delegate void HPChangedDelegate(int newHP, IHealthTrackingEntity Owner);
@@ -14,6 +15,7 @@ public class HPTrait
     public bool Regen => _regen;
 
     IHealthTrackingEntity _owner;
+    HPEvents _events;
 
     int _hp;
     int _maxHP;
@@ -23,13 +25,11 @@ public class HPTrait
     bool _regen;
 
 
-    public event Action<IHealthTrackingEntity> HPExhausted;
-    public event Action<IHealthTrackingEntity,int> HPChanged;
     public event Action<IHealthTrackingEntity,int> MaxHPChanged;
-    public event Action<IHealthTrackingEntity, int> Regenerated;
-
-    public void Init(IHealthTrackingEntity owner, HPTraitData hpData)
+    
+    public void Init(IHealthTrackingEntity owner, HPTraitData hpData, BaseGameEvents.HPEvents events)
     {
+        _events = events;
         _data = hpData;
         _owner = owner;
         _maxHP = _data.MaxHP;
@@ -42,7 +42,9 @@ public class HPTrait
     public void IncreaseMaxHP(int newMax, bool refillCurrent = false)
     {
         _maxHP = newMax;
-        if(refillCurrent)
+        _events.SendMaxHPChanged(_owner);
+
+        if (refillCurrent)
         {
             _hp = _maxHP;
             MaxHPChanged?.Invoke(_owner, _maxHP);
@@ -67,24 +69,23 @@ public class HPTrait
 
         if(hpIncrease > 0)
         {
-            // TODO: Notify regen??
-            Add(hpIncrease);
+            Add(hpIncrease, regen:true);
         }
     }
 
-    public void Add(int delta)
+    public void Add(int delta, bool regen = false)
     {
         _hp = Mathf.Clamp(_hp + delta, 0, _maxHP);
-        HPChanged?.Invoke(_owner, delta);
+        _events.SendHealthEvent(_owner, delta, true, false, regen);
     }
 
     public void Decrease(int delta)
     {
         _hp = Mathf.Clamp(_hp - delta, 0, _maxHP);
-        HPChanged?.Invoke(_owner, delta);
+        _events.SendHealthEvent(_owner, delta, false, true, false);
         if (_hp == 0)
         {
-            HPExhausted?.Invoke(_owner);
+            _events.SendHealthExhausted(_owner);
         }
     }
 

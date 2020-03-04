@@ -18,7 +18,7 @@ public enum BombImmunityType
 }
 
 
-public class Player : BaseEntity, IHealthTrackingEntity, IBattleEntity2
+public class Player : BaseEntity, IHealthTrackingEntity, IBattleEntity
 {
     public int HP => _hpTrait.HP;
     public int MaxHP => _hpTrait.MaxHP;
@@ -61,7 +61,7 @@ public class Player : BaseEntity, IHealthTrackingEntity, IBattleEntity2
 
         name = "Player";
         _hpTrait = new HPTrait();
-        _hpTrait.Init(this, _playerData.HPData);
+        _hpTrait.Init(this, _playerData.HPData, deps.GameEvents.Health);
 
         _speed = _playerData.Speed;
 
@@ -71,7 +71,7 @@ public class Player : BaseEntity, IHealthTrackingEntity, IBattleEntity2
         _playerEvents = deps.GameEvents.Player;
 
         _battleTrait = new BattleTrait();
-        _battleTrait.Init(_entityController, _playerData.BattleData, this);
+        _battleTrait.Init(_entityController, _playerData.BattleData, this, deps.GameEvents.Battle);
     }
 
     public override void AddTime(float timeUnits, ref int playState)
@@ -173,19 +173,19 @@ public class Player : BaseEntity, IHealthTrackingEntity, IBattleEntity2
         return 0; // :D
     }
 
-    public List<IBattleEntity2> FindHostileTargetsInMaxRange(int radius)
+    public List<IBattleEntity> FindHostileTargetsInMaxRange(int radius)
     {
         var nearby = _entityController.GetNearbyEntities(Coords, radius);
-        List<IBattleEntity2> result = nearby.FindAll(x => x is Monster).ConvertAll(x => (IBattleEntity2)x);
+        List<IBattleEntity> result = nearby.FindAll(x => x is Monster).ConvertAll(x => (IBattleEntity)x);
         return result;
     }
 
-    public bool TryFindAttack(BaseAttack attack, out MoveDirection direction, out List<IBattleEntity2> targets)
+    public bool TryFindAttack(BaseAttack attack, out MoveDirection direction, out List<IBattleEntity> targets)
     {
         throw new NotImplementedException();
     }
 
-    public override bool IsHostileTo(IBattleEntity2 other)
+    public override bool IsHostileTo(IBattleEntity other)
     {
         return other is Monster;
     }

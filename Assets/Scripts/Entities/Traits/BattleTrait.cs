@@ -8,14 +8,14 @@ public enum BattleRole
     Defender
 }
 
-public interface IBattleEntity2
+public interface IBattleEntity
 {
     string Name { get; }
     HPTrait HPTrait { get; }
     BattleTrait BattleTrait { get;  }
     Vector2Int Coords { get; }
 
-    bool IsHostileTo(IBattleEntity2 other);         
+    bool IsHostileTo(IBattleEntity other);         
 
     void ApplyBattleResults(BattleActionResult result, BattleRole role);
 }
@@ -23,26 +23,28 @@ public interface IBattleEntity2
 public class BattleTrait
 {
     BaseAttack CurrentAttack => _attacks[_currentAttackIdx];
-    IBattleEntity2 Owner => _owner;
-    IBattleEntity2 _owner;
+    IBattleEntity Owner => _owner;
+    IBattleEntity _owner;
 
     BattleTraitData _data;
     
     List<BaseAttack> _attacks;
     int _currentAttackIdx;
 
-    List<IBattleEntity2> _targets;
+    List<IBattleEntity> _targets;
     MoveDirection _attackDirection;
 
     IEntityController _entityController;
+    BaseGameEvents.BattleEvents _battleEvents;
 
-    public void Init(IEntityController entityController,  BattleTraitData data, IBattleEntity2 owner)
+    public void Init(IEntityController entityController,  BattleTraitData data, IBattleEntity owner, BaseGameEvents.BattleEvents battleEvents)
     {
         _data = data;
         _entityController = entityController;
         _owner = owner;
         _attacks = new List<BaseAttack>();
         _currentAttackIdx = 0;
+        _battleEvents = battleEvents;
         foreach(var attackData in data.Attacks)
         {
             var attack = attackData.SpawnRuntime();
@@ -56,7 +58,7 @@ public class BattleTrait
         int bestIdx = -1;
         int bestTotalDamage = 0;
         MoveDirection moveDir = MoveDirection.None;
-        List<IBattleEntity2> bestTargets = new List<IBattleEntity2>();
+        List<IBattleEntity> bestTargets = new List<IBattleEntity>();
 
         MoveDirection[] rotations = new MoveDirection[]
         {
@@ -106,13 +108,13 @@ public class BattleTrait
         return defeated.IsSupersetOf(targetsAtCoords);
     }
 
-    public bool CanAttackEntity(IBattleEntity2 other)
+    public bool CanAttackEntity(IBattleEntity other)
     {
         MoveDirection direction = ResolveDirectionFromCoords(_owner.Coords, other.Coords);
         return ExistsTargets(_attacks[_currentAttackIdx], direction);
     }
 
-    public bool TryAttackEntity(IBattleEntity2 other)
+    public bool TryAttackEntity(IBattleEntity other)
     {
         MoveDirection direction = ResolveDirectionFromCoords(_owner.Coords, other.Coords);
         var targets = FindAttackTargets(_attacks[_currentAttackIdx], direction);
@@ -121,20 +123,20 @@ public class BattleTrait
         return defeated.Contains(other);
     }
 
-    public void PrepareAttack(List<IBattleEntity2> targets, MoveDirection attackDirection)
+    public void PrepareAttack(List<IBattleEntity> targets, MoveDirection attackDirection)
     {
         _targets = targets;
         _attackDirection = attackDirection;
     }
 
-    public List<IBattleEntity2> FindAttackTargets(BaseAttack attack, MoveDirection direction)
+    public List<IBattleEntity> FindAttackTargets(BaseAttack attack, MoveDirection direction)
     {
-        List<IBattleEntity2> results = new List<IBattleEntity2>();
+        List<IBattleEntity> results = new List<IBattleEntity>();
         var offsets = attack.GetRotatedOffsets(direction);
         foreach(var offset in offsets)
         {
             var entities = _entityController.GetEntitiesAt(offset + _owner.Coords);
-            var filteredHostiles = entities.FindAll(x => typeof(IBattleEntity2).IsAssignableFrom(x.GetType())).ConvertAll(x =>(IBattleEntity2)x);
+            var filteredHostiles = entities.FindAll(x => typeof(IBattleEntity).IsAssignableFrom(x.GetType())).ConvertAll(x =>(IBattleEntity)x);
             filteredHostiles.RemoveAll(x => !x.IsHostileTo(_owner));
             results.AddRange(filteredHostiles);
         }
@@ -147,7 +149,7 @@ public class BattleTrait
         foreach (var offset in offsets)
         {
             var entities = _entityController.GetEntitiesAt(offset + _owner.Coords);
-            var filteredHostiles = entities.FindAll(x => typeof(IBattleEntity2).IsAssignableFrom(x.GetType())).ConvertAll(x => (IBattleEntity2)x);
+            var filteredHostiles = entities.FindAll(x => typeof(IBattleEntity).IsAssignableFrom(x.GetType())).ConvertAll(x => (IBattleEntity)x);
             filteredHostiles.RemoveAll(x => !x.IsHostileTo(_owner));
             if(filteredHostiles.Count > 0)
             {
@@ -173,13 +175,14 @@ public class BattleTrait
 
     }
 
-    public HashSet<IBattleEntity2> StartAttack()
+    public HashSet<IBattleEntity> StartAttack()
     {
         // Use direction for the view
-        HashSet<IBattleEntity2> defeated = new HashSet<IBattleEntity2>();
+        HashSet<IBattleEntity> defeated = new HashSet<IBattleEntity>();
         foreach(var target in _targets)
         {
             BattleUtils.SolveAttack(_owner, target, out var result);
+            _battleEvents.SendAttack(_owner, target, result);
             if(result.DefenderDefeated)
             {
                 defeated.Add(target);

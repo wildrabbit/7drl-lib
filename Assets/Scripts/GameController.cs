@@ -27,7 +27,9 @@ public abstract class GameController : MonoBehaviour
 
     [SerializeField] float _gameOverDelay;
 
-    protected BaseGameEvents GameEvents;
+    public BaseGameEvents GameEvents => _gameEvents;
+
+    protected BaseGameEvents _gameEvents;
     protected GameEventLog _eventLogger;
 
     protected IMapController _mapController;
@@ -127,7 +129,7 @@ public abstract class GameController : MonoBehaviour
     {
         UnRegisterEntityEvents();
 
-        GameEvents = null;
+        _gameEvents = null;
         _cameraController.Cleanup();
         _monsterCreator.Cleanup();
         _mapController.Cleanup();
@@ -148,10 +150,10 @@ public abstract class GameController : MonoBehaviour
 
     void StartGame()
     {
-        GameEvents = CreateGameEvents();
+        _gameEvents = CreateGameEvents();
 
         // Init game control / time vars
-        _timeController.Init(_entityController, GameEvents, _gameData.DefaultTimescale);
+        _timeController.Init(_entityController, _gameEvents, _gameData.DefaultTimescale);
         _timeController.Start();
 
         _inputDelay = _gameData.InputDelay;
@@ -159,11 +161,11 @@ public abstract class GameController : MonoBehaviour
 
         _mapController.Init(_gameData.MapData);
 
-        _entityController.Init(_mapController, _gameData.EntityCreationData, GameEvents);
+        _entityController.Init(_mapController, _gameData.EntityCreationData, _gameEvents);
 
-        _monsterCreator.Init(_entityController, _mapController, _timeController, GameEvents.Monsters, _gameData.EntityCreationData.MonsterData);
+        _monsterCreator.Init(_entityController, _mapController, _timeController, _gameEvents.Monsters, _gameData.EntityCreationData.MonsterData);
 
-        _eventLogger.Init(GameEvents);
+        _eventLogger.Init(_timeController, _gameEvents);
 
         _hud = CreateGameHUD();
         
@@ -182,9 +184,8 @@ public abstract class GameController : MonoBehaviour
         _result = GameResult.Running;
 
         _hud.Init(_eventLogger, _entityController.Player, _timeController, _cameraController.UICamera);
-        GameEvents.Time.NewTurn += (val) => Debug.Log($"New turn: {_timeController.Turns}. Time elapsed: {_timeController.TimeUnits}");        
         RegisterEntityEvents();
-        GameEvents.Flow.SendStarted();
+        _gameEvents.Flow.SendStarted();
     }
 
     void PopulateLevel()
@@ -192,7 +193,7 @@ public abstract class GameController : MonoBehaviour
         _mapController.BuildMap();
         _entityController.StartGame();
 
-        _cameraController.Init(_mapController.WorldBounds, _entityController.Player.transform, GameEvents);
+        _cameraController.Init(_mapController.WorldBounds, _entityController.Player.transform, _gameEvents);
 
         _monsterCreator.RegisterSpawnPoints(FetchMonsterSpawnPoints());
         _monsterCreator.ProcessInitialSpawns();
@@ -213,12 +214,12 @@ public abstract class GameController : MonoBehaviour
 
     void RegisterEntityEvents()
     {
-        GameEvents.Player.Died += OnPlayerDied;
+        _gameEvents.Player.Died += OnPlayerDied;
     }
 
     void UnRegisterEntityEvents()
     {
-        GameEvents.Player.Died -= OnPlayerDied;
+        _gameEvents.Player.Died -= OnPlayerDied;
     }
 
     private void OnPlayerDied()
@@ -227,7 +228,7 @@ public abstract class GameController : MonoBehaviour
         _playStateID = PlayStates.GameOver;
         ((GameOverStateContext)_playStatesData[_playStateID]).Elapsed = 0.0f;
 
-        GameEvents.Flow.SendGameOver(_result);
+        _gameEvents.Flow.SendGameOver(_result);
     }
 
     public void Restart()
@@ -288,7 +289,8 @@ public abstract class GameController : MonoBehaviour
             Input = _input,
             BumpingWallsWillSpendTurn = _gameData.BumpingWallsWillSpendTurn,
             EntityController = _entityController,
-            Map = _mapController
+            Map = _mapController,
+            Events = _gameEvents
         };
     }
 

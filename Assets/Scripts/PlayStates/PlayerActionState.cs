@@ -6,7 +6,7 @@ public class PlayerActionStateContext : PlayStateContext
     public IEntityController EntityController;
     public IMapController Map;
     public bool BumpingWallsWillSpendTurn;
-    // TODO: GameEvents
+    public BaseGameEvents Events;
 
     public override void Refresh(GameController gameController)
     {
@@ -15,6 +15,7 @@ public class PlayerActionStateContext : PlayStateContext
     public override void Init(GameController gameController)
     {
         Refresh(gameController);
+        Events = gameController.GameEvents;
     }
 }
 
@@ -35,10 +36,7 @@ public class PlayerActionState : IPlayState
         if(input.IdleTurn)
         {
             timeWillPass = true;
-            //contextData.GameEvents.PlayPhase.SendIdle();
-            //PlayerActionEvent evt = new PlayerActionEvent(actionData.Turns, actionData.TimeUnits);
-            //evt.SetIdle();
-            //log.AddEvent(evt);
+            actionData.Events.Player.SendIdleTurn();
             return GameController.PlayStates.Action;
         }
 

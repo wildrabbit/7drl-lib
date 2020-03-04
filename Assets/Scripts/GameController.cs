@@ -25,11 +25,15 @@ public abstract class GameController : MonoBehaviour
     
     [SerializeField] protected HUD _hudPrefab;
 
+    [SerializeField] float _gameOverDelay;
+
     protected BaseGameEvents GameEvents;
+    protected GameEventLog _eventLogger;
 
     protected IMapController _mapController;
     protected TimeController _timeController;
     protected IEntityController _entityController;
+    protected HUD _hud;
 
     protected MonsterCreator _monsterCreator;
 
@@ -55,6 +59,7 @@ public abstract class GameController : MonoBehaviour
         _entityController = CreateEntityController();
         _mapController = CreateMapController();
         _monsterCreator = new MonsterCreator();
+        _eventLogger = CreateGameLogger();
 
         _result = GameResult.None;
         _loading = false;
@@ -110,7 +115,7 @@ public abstract class GameController : MonoBehaviour
             {
                 Input = _input,
                 Controller = this,
-                Delay = 5.0f,
+                Delay = _gameOverDelay,
                 Elapsed = -1.0f
             }
         };
@@ -130,6 +135,9 @@ public abstract class GameController : MonoBehaviour
         _entityController.Cleanup();
         _timeController.Cleanup();
 
+        _input.OnLayoutChanged += _hud.OnInputLayoutChanged;
+        _hud.Cleanup();
+        Destroy(_hud.gameObject);
     }
 
     IEnumerator DelayedPurge(float delay)
@@ -155,6 +163,12 @@ public abstract class GameController : MonoBehaviour
 
         _monsterCreator.Init(_entityController, _mapController, _timeController, GameEvents.Monsters, _gameData.EntityCreationData.MonsterData);
 
+        _eventLogger.Init(GameEvents);
+
+        _hud = CreateGameHUD();
+        
+        _input.OnLayoutChanged += _hud.OnInputLayoutChanged;
+
         
         // populate the level
         PopulateLevel();
@@ -167,8 +181,8 @@ public abstract class GameController : MonoBehaviour
         _playStateID = PlayStates.Action;
         _result = GameResult.Running;
 
-        GameEvents.Time.NewTurn += (val) => Debug.Log($"New turn: {_timeController.Turns}. Time elapsed: {_timeController.TimeUnits}");
-        
+        _hud.Init(_eventLogger, _entityController.Player, _timeController, _cameraController.UICamera);
+        GameEvents.Time.NewTurn += (val) => Debug.Log($"New turn: {_timeController.Turns}. Time elapsed: {_timeController.TimeUnits}");        
         RegisterEntityEvents();
         GameEvents.Flow.SendStarted();
     }
@@ -276,5 +290,17 @@ public abstract class GameController : MonoBehaviour
             EntityController = _entityController,
             Map = _mapController
         };
+    }
+
+    protected virtual HUD CreateGameHUD()
+    {
+        var hud = Instantiate<HUD>(_hudPrefab);
+        return hud;
+    }
+
+    protected virtual GameEventLog CreateGameLogger()
+    {
+        var logger = new GameEventLog();
+        return logger;
     }
 }

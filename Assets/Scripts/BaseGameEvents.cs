@@ -85,11 +85,33 @@ public class BaseGameEvents
         }
     }
 
+    public class HPEvents
+    {
+        public event Action<IHealthTrackingEntity, int , bool, bool, bool> HealthEvent;
+        public event Action<IHealthTrackingEntity> HealthExhausted;
+
+        public void SendHealthEvent(IHealthTrackingEntity entity, int delta, bool healed, bool attacked, bool regen)
+        {
+            HealthEvent?.Invoke(entity, delta, healed, attacked, regen);
+        }
+        public void SendHealthExhausted(IHealthTrackingEntity entity)
+        {
+            HealthExhausted?.Invoke(entity);
+        }
+    }
+
+    public class BattleEvents
+    {
+
+    }
+
     public TimeEvents Time;
     public PlayerEvents Player;
     public MonsterEvents Monsters;
     public EntityEvents Entities;
     public FlowEvents Flow;
+    public HPEvents Health;
+    public BattleEvents Battle;
 
     public BaseGameEvents()
     {
@@ -98,5 +120,7 @@ public class BaseGameEvents
         Monsters = new MonsterEvents();
         Entities = new EntityEvents();
         Flow = new FlowEvents();
+        Health = new HPEvents();
+        Battle = new BattleEvents();
     }
 }

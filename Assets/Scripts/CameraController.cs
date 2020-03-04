@@ -13,7 +13,8 @@ public class CameraController : MonoBehaviour
     [SerializeField] Camera _mainCamera;
 
     public Camera Camera => _mainCamera;
-    
+    public Camera UICamera => _uiCamera;
+
     public AnimationCurve EaseCurve;
     public CameraType CameraType;
     Transform _target;

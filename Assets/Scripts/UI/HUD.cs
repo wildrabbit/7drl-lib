@@ -40,25 +40,23 @@ public class HUD : MonoBehaviour
     GameEventLog _logger;
     Player _player;
 
-    TurnsGetterDelegate _turnsGetter;
-    TimeGetterDelegate _timeGetter;
+    TimeController _timeController;
 
-    public void Init(GameEventLog logger, Player player, TurnsGetterDelegate turnsGetter, TimeGetterDelegate timeGetter, Camera camera)
+    public void Init(GameEventLog logger, Player player, TimeController timeController, Camera uiCamera)
     {
-        _canvas.worldCamera = camera;
+        _timeController = timeController;
+        _canvas.worldCamera = uiCamera;
         _logger = logger;
         _logger.OnEventAdded += UpdateLog;
-
-        _turnsGetter = turnsGetter;
-        _timeGetter = timeGetter;
+        
 
         _player = player;
 
         SetLogText("");
         _hpValue.SetText($"{_player.HP}/{_player.MaxHP}");
-        _turnCountValue.SetText(_turnsGetter().ToString());
-        _timeUnitsValue.SetText(_timeGetter().ToString());
-        _mapPosValue.SetText(_player.Coords.ToString());
+        _turnCountValue.SetText($"{_timeController.Turns}");
+        _timeUnitsValue.SetText($"{_timeController.TimeUnits}");
+        _mapPosValue.SetText($"{_player.Coords}");
 
         // InitInventory(_player.BomberTrait.Inventory, _player.BomberTrait.SelectedIdx);
     }
@@ -85,8 +83,8 @@ public class HUD : MonoBehaviour
         
         // TODO: Replace with events
         _hpValue.SetText($"{_player.HP}/{_player.MaxHP}");
-        _turnCountValue.SetText(_turnsGetter().ToString());
-        _timeUnitsValue.SetText(_timeGetter().ToString());
+        _turnCountValue.SetText($"{_timeController.Turns}");
+        _timeUnitsValue.SetText($"{_timeController.TimeUnits}");
         _mapPosValue.SetText(_player.Coords.ToString());
     }
 
@@ -180,17 +178,17 @@ public class HUD : MonoBehaviour
 
     //}
 
-    //public void OnInputLayoutChanged(int layout)
-    //{
-    //    if(layout == GameInput.kLayoutQwerty)
-    //    {
-    //        _layoutLabel.text = "MOVE: QWEASD";
-    //        _layoutCycleLabel.text = "(Switch to AZERTY: TAB)";
-    //    }
-    //    else if (layout == GameInput.kLayoutAzerty)
-    //    {
-    //        _layoutLabel.text = "MOVE: AZEQSD";
-    //        _layoutCycleLabel.text = "(Switch to QWERTY: TAB)";
-    //    }
-    //}
+    public void OnInputLayoutChanged(LayoutType layout)
+    {
+        if (layout == LayoutType.Qwerty)
+        {
+            _layoutLabel.text = "MOVE: WASD";
+            _layoutCycleLabel.text = "(Switch to AZERTY: TAB)";
+        }
+        else if (layout == LayoutType.Azerty)
+        {
+            _layoutLabel.text = "MOVE: ZQSD";
+            _layoutCycleLabel.text = "(Switch to QWERTY: TAB)";
+        }
+    }
 }

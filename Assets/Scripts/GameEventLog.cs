@@ -90,11 +90,13 @@ public class GameEventLog
     public event SessionFinishedDelegate OnSessionFinished;
 
 
-    List<BaseEvent> _events;
+    BaseGameEvents _gameEvents;
+    List<BaseEvent> _eventRecord;
 
-    public void Init()
+    public virtual void Init(BaseGameEvents events)
     {
-        _events = new List<BaseEvent>();
+        _gameEvents = events;
+        _eventRecord = new List<BaseEvent>();
     }
 
     public void StartSession(GameSetupEvent evt)
@@ -106,7 +108,7 @@ public class GameEventLog
 
     public void AddEvent(BaseEvent evt)
     {
-        _events.Add(evt);
+        _eventRecord.Add(evt);
         OnEventAdded?.Invoke(evt);
     }
 
@@ -118,13 +120,13 @@ public class GameEventLog
 
     public void Clear()
     {
-        _events.Clear();
+        _eventRecord.Clear();
     }
 
     public string Flush()
     {
         StringBuilder builder = new StringBuilder();
-        foreach(var evt in _events)
+        foreach(var evt in _eventRecord)
         {
             builder.Append(evt.Message());
         }
@@ -134,10 +136,10 @@ public class GameEventLog
     public List<string> GetLastItemMessages(int lastMessagesToDisplay)
     {
         List<string> messages = new List<string>();
-        int positionIdx = Mathf.Max(0, _events.Count - lastMessagesToDisplay);
-        for(int i = positionIdx; i < _events.Count; ++i)
+        int positionIdx = Mathf.Max(0, _eventRecord.Count - lastMessagesToDisplay);
+        for(int i = positionIdx; i < _eventRecord.Count; ++i)
         {
-            messages.Add(_events[i].Message());
+            messages.Add(_eventRecord[i].Message());
         }
         return messages;
     }

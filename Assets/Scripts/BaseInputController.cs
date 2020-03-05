@@ -72,9 +72,20 @@ public class BaseInputController
 
     public bool Any => Input.anyKeyDown;
 
+    public bool RangeStart => rangeTarget.Value;
+    public bool ActionConfirm => actionConfirm.Value;
+    public bool ActionCancel => actionCancel.Value;
+
     public MoveDirection MoveDir;
 
     public bool ShiftPressed => Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+
+    InputEntry rangeTarget;
+
+    InputEntry actionCancel;
+    InputEntry actionConfirm;
+
+    InputEntry dropAbsorption;
 
     public bool[] NumbersPressed;
     public KeyCode StartKeyCode;
@@ -114,6 +125,11 @@ public class BaseInputController
         }
 
         idle = new InputEntry(KeyCode.Space, _moveInputDelay);
+        actionCancel = new InputEntry(KeyCode.Escape, _moveInputDelay);
+        actionConfirm = new InputEntry(KeyCode.Return, _moveInputDelay);
+
+        rangeTarget = new InputEntry(KeyCode.J, _moveInputDelay);
+        dropAbsorption = new InputEntry(KeyCode.U, _moveInputDelay);
 
         NumbersPressed = new bool[_inputData.NumberKeys];
         NumbersPressed.Fill<bool>(false);
@@ -129,8 +145,14 @@ public class BaseInputController
         }
 
         idle.Read();
+        rangeTarget.Read();
+        dropAbsorption.Read();
+        actionConfirm.Read();
+        actionCancel.Read();
 
         MoveDir = MoveDirection.None;
+
+        
 
         foreach (var entry in _directionEntries)
         {

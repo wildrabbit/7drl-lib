@@ -20,6 +20,10 @@ public enum BombImmunityType
 
 public class Player : BaseEntity, IHealthTrackingEntity, IBattleEntity
 {
+    public override bool BlocksRanged(bool piercing)
+    {
+        return !piercing;
+    }
     public int HP => _hpTrait.HP;
     public int MaxHP => _hpTrait.MaxHP;
     public float Speed => _speed;

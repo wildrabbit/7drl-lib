@@ -45,6 +45,16 @@ public abstract class BaseEntity : MonoBehaviour, IEntity, IScheduledEntity
         set => _active = value;
     }
 
+    public virtual bool BlocksRanged(bool piercing) => true;
+
+    public virtual string[] Attributes
+    {
+        get
+        {
+            return new string[] { };
+        }
+    }
+
     protected GameObject _view;
     protected BaseEntityData _entityData;
     protected IEntityController _entityController;
@@ -128,11 +138,5 @@ public abstract class BaseEntity : MonoBehaviour, IEntity, IScheduledEntity
         return _mapController.Distance(Coords, _entityController.Player.Coords);
     }
 
-    public virtual string[] Attributes
-    {
-        get
-        {
-            return new string[] { };
-        }
-    }
+    
 }

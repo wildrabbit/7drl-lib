@@ -35,6 +35,11 @@ public class BattleTrait
     List<IBattleEntity> _targets;
     MoveDirection _attackDirection;
 
+    public void GetReachableStateForCoords(List<Vector2Int> coords, out List<bool> state)
+    {
+        state = CurrentAttack.GetReachableStateForCoords(_owner, coords);
+    }
+
     IEntityController _entityController;
     BaseGameEvents.BattleEvents _battleEvents;
 
@@ -122,6 +127,7 @@ public class BattleTrait
     {
         // Use direction for the view
         HashSet<IBattleEntity> defeated = new HashSet<IBattleEntity>();
+
         foreach(var target in _targets)
         {
             BattleUtils.SolveAttack(_owner, target, out var result);
@@ -131,7 +137,9 @@ public class BattleTrait
                 defeated.Add(target);
             }
         }
-        _attacks[_currentAttackIdx].Elapsed = 0;
+
+        if(_targets.Count > 0)
+            _attacks[_currentAttackIdx].Elapsed = 0;
         return defeated;
     }
     

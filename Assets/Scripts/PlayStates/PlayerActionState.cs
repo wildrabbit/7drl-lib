@@ -41,6 +41,12 @@ public class PlayerActionState : IPlayState
             return GameController.PlayStates.Action;
         }
 
+        if(input.RangeStart)
+        {
+            timeWillPass = false;
+            return GameController.PlayStates.RangePrepare;
+        }
+
         Vector2Int playerCoords = map.CoordsFromWorld(player.transform.position);
 
 
@@ -131,5 +137,16 @@ public class PlayerActionState : IPlayState
         bool willForceExit = false;
 
         return willForceExit;
+    }
+
+    public virtual void Enter(PlayStateContext context)
+    {
+
+    }
+
+
+    public virtual void Exit(PlayStateContext context)
+    {
+
     }
 }

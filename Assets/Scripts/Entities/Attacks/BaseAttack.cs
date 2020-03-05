@@ -22,9 +22,8 @@ public abstract class BaseAttack
     public abstract bool CanTargetBeReached(IBattleEntity attacker, IBattleEntity target);
 
     public abstract List<IBattleEntity> FindAllReachableTargets(IBattleEntity source);
-    public abstract List<IBattleEntity> FindAllReachableTargets(IBattleEntity source, IBattleEntity requiredTarget);
-
     public abstract List<IBattleEntity> FindTargetsAtCoords(IBattleEntity source, Vector2Int refCoords);
+    public abstract List<bool> GetReachableStateForCoords(IBattleEntity source, List<Vector2Int> coords);
 
 
     public BaseAttack(BaseAttackData data)

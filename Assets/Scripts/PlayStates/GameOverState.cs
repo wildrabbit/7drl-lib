@@ -43,5 +43,16 @@ public class GameOverState : IPlayState
 
         return GameController.PlayStates.GameOver;
     }
+
+    public virtual void Enter(PlayStateContext context)
+    {
+
+    }
+
+
+    public virtual void Exit(PlayStateContext context)
+    {
+
+    }
 }
 

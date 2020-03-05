@@ -39,29 +39,6 @@ public class SimpleMeleeAttack : BaseAttack
         return targetsAtBestPos;
     }
 
-    public override List<IBattleEntity> FindAllReachableTargets(IBattleEntity source, IBattleEntity requiredTarget)
-    {
-        _mapController.GetNeighbourDeltas(source.Coords, out var offsets);
-
-        List<IBattleEntity> targetsAtBestPos = new List<IBattleEntity>();
-        foreach (var offset in offsets)
-        {
-            Vector2Int atCoords = offset + source.Coords;
-            var targetsAtCoords = FindTargetsAtCoords(source, atCoords);
-            if (!targetsAtCoords.Contains(requiredTarget)) continue;
-
-            int numTargets = targetsAtCoords.Count;
-            if (numTargets > targetsAtCoords.Count)
-            {
-                targetsAtBestPos = targetsAtCoords;
-            }
-        }
-        if (targetsAtBestPos.Count > 1 && ((SimpleMeleeAttackData)Data).SingleTarget)
-        {
-            targetsAtBestPos.RemoveRange(1, targetsAtBestPos.Count - 1);
-        }
-        return targetsAtBestPos;
-    }
 
     bool AtMeleeRange(Vector2Int src, Vector2Int tgt)
     {
@@ -77,6 +54,11 @@ public class SimpleMeleeAttack : BaseAttack
             filtered.RemoveRange(1, filtered.Count - 1);
         }
         return filtered;
+    }
+
+    public override List<bool> GetReachableStateForCoords(IBattleEntity source, List<Vector2Int> coords)
+    {
+        return new List<bool>(); // Don't care
     }
 }
 

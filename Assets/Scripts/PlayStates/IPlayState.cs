@@ -18,9 +18,13 @@ public class PlayStateContext
     public virtual void Init(GameController gameController)
     {
     }
+
 }
 
 public interface IPlayState
 {
     int Update(PlayStateContext context, out bool willSpendTime);
+    void Enter(PlayStateContext context);
+    void Exit(PlayStateContext context);
+
 }

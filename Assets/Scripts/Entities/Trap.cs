@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class Trap : BaseEntity, ITriggerEntity
 {
+    public override bool BlocksRanged(bool piercing) => false;
     public TriggerTrait Trigger => _triggerTrait;
     TriggerTrait _triggerTrait;
     TrapData _trapData;

@@ -21,7 +21,7 @@ public interface IMapController
 
 
     void GetNeighbourDeltas(Vector2Int currentCoords, out Vector2Int[] offsets);
-    bool IsNavigationValidTile(Vector3Int coords);
+    bool ValidCoords(Vector3Int coords);
     void SetRandomCoords(Vector2Int refCoords, int scatterLimitRadius, ref Vector2Int[] coordList, bool firstIsRef, Predicate<Vector2Int> exclusionCheck);
 
     Vector2Int RandomNeighbour(Vector2Int refCoords, Predicate<Vector2Int> restrictions = null);

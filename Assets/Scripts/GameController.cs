@@ -17,8 +17,11 @@ public abstract class GameController : MonoBehaviour
     {
         public const int Action = 0;
         public const int GameOver = 1;
-        public const int Last = PlayStates.GameOver;
+        public const int RangePrepare = 2;
+        public const int Last = PlayStates.RangePrepare;
     }
+
+    [SerializeField] RangeDisplay _rangePrefab;
 
     [SerializeField] protected GameData _gameData;
     [SerializeField] protected CameraController _cameraController;
@@ -95,7 +98,8 @@ public abstract class GameController : MonoBehaviour
         _playStates = new Dictionary<int, IPlayState>
         {
             [PlayStates.Action] = CreatePlayerActionState(),
-            [PlayStates.GameOver] = new GameOverState()
+            [PlayStates.GameOver] = new GameOverState(),
+            [PlayStates.RangePrepare] = new RangeSelectState()
         };
         InitExtendedPlayStates();
     }
@@ -119,6 +123,13 @@ public abstract class GameController : MonoBehaviour
                 Controller = this,
                 Delay = _gameOverDelay,
                 Elapsed = -1.0f
+            },
+            [PlayStates.RangePrepare] = new RangeSelectStateContext
+            {
+                Input = _input,
+                EntityController = _entityController,
+                MapController = _mapController,
+                ViewPrefab = _rangePrefab
             }
         };
         InitExtendedPlayStates();
@@ -258,9 +269,11 @@ public abstract class GameController : MonoBehaviour
         }
 
         _input.Read();
-        _playStatesData[_playStateID].Refresh(this);
+        var currentState = _playStatesData[_playStateID];
+
+        currentState.Refresh(this);
         int nextPlayState = _playStates[_playStateID].Update(_playStatesData[_playStateID], out var timeWillPass);
-        _playStateID = nextPlayState;
+
 
         if (timeWillPass)
         {
@@ -270,7 +283,14 @@ public abstract class GameController : MonoBehaviour
         _entityController.RemovePendingEntities();
         _entityController.AddNewEntities();
 
-        if(_result == GameResult.Running)
+        if (_playStateID != nextPlayState)
+        {
+            _playStates[_playStateID].Exit(_playStatesData[_playStateID]);
+            _playStateID = nextPlayState;
+            _playStates[_playStateID].Enter(_playStatesData[_playStateID]);
+        }
+
+        if (_result == GameResult.Running)
         {
             _result = EvaluateVictory();
         }
@@ -318,4 +338,5 @@ public abstract class GameController : MonoBehaviour
         var logger = new GameEventLog();
         return logger;
     }
+
 }

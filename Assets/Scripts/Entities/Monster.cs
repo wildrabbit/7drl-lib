@@ -16,6 +16,10 @@ public enum MonsterState
 
 public class Monster : BaseEntity,  IHealthTrackingEntity, IBattleEntity
 {
+    public override bool BlocksRanged(bool piercing)
+    {
+        return !piercing;
+    }
 
     public SpriteRenderer ViewPrefab;
 

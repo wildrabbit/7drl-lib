@@ -24,6 +24,8 @@ public class Player : BaseEntity, IHealthTrackingEntity, IBattleEntity
     public int MaxHP => _hpTrait.MaxHP;
     public float Speed => _speed;
 
+    public List<string> _attributes = new List<string>();
+
     public override Vector2Int Coords
     {
         get
@@ -54,6 +56,7 @@ public class Player : BaseEntity, IHealthTrackingEntity, IBattleEntity
     protected HPTrait _hpTrait;
     protected BaseMovingTrait _movingTrait;
     protected BaseGameEvents.PlayerEvents _playerEvents;
+    protected BaseGameEvents.HPEvents _healthEvents;
 
 
     protected override void DoInit(BaseEntityDependencies deps)
@@ -69,6 +72,8 @@ public class Player : BaseEntity, IHealthTrackingEntity, IBattleEntity
         _movingTrait = _playerData.MovingTraitData.CreateRuntimeTrait();
 
         _playerEvents = deps.GameEvents.Player;
+        _healthEvents = deps.GameEvents.Health;
+        _healthEvents.HealthExhausted += OnDied;
 
         _battleTrait = new BattleTrait();
         _battleTrait.Init(_entityController, _playerData.BattleData, this, deps.GameEvents.Battle);
@@ -85,7 +90,9 @@ public class Player : BaseEntity, IHealthTrackingEntity, IBattleEntity
 
     internal bool ExistsHostilesAt(Vector2Int newPlayerCoords)
     {
-        return _entityController.GetEntitiesAt(newPlayerCoords).Exists(x => x.IsHostileTo(this));
+        var battleEntities = _entityController.GetEntitiesAt(newPlayerCoords).FindAll(x => typeof(IBattleEntity).IsAssignableFrom(x.GetType())).ConvertAll(x => (IBattleEntity)x);
+
+        return  battleEntities.Exists(x => x.IsHostileTo(this));
     }
 
     internal bool AttackCoords(Vector2Int newPlayerCoords)
@@ -94,14 +101,20 @@ public class Player : BaseEntity, IHealthTrackingEntity, IBattleEntity
         return allDefeated;
     }
 
-    public bool TakeDamage(int damage)
+    public void OnDied(IHealthTrackingEntity e)
     {
-        _hpTrait.Decrease(damage);
-        Debug.Log($"Player took {damage} damage!. Current HP: {HP}");
-        if (HP == 0)
+        if(e == this)
         {
             _playerEvents.SendPlayerDied();
             _entityController.DestroyEntity(this);
+        }
+    }
+
+    public bool TakeDamage(int damage)
+    {
+        _hpTrait.Decrease(damage);
+        if (HP == 0)
+        {            
             return true;
         }
         return false;
@@ -120,6 +133,7 @@ public class Player : BaseEntity, IHealthTrackingEntity, IBattleEntity
     public override void OnDestroyed()
     {
         base.OnDestroyed();
+        _healthEvents.HealthExhausted -= OnDied;
         _entityController.PlayerDestroyed();
     }
 
@@ -164,8 +178,9 @@ public class Player : BaseEntity, IHealthTrackingEntity, IBattleEntity
 
     public bool CanAttackCoords(Vector2Int testCoords)
     {
-        List<BaseEntity> otherEntities = _entityController.GetEntitiesAt(testCoords).FindAll(x => x.IsHostileTo(this));
-        return otherEntities.Count > 0;
+        var nearby = _entityController.GetEntitiesAt(testCoords);
+        List<IBattleEntity> result = nearby.FindAll(x => x is Monster).ConvertAll(x => (IBattleEntity)x);
+        return result.Count > 0;
     }
 
     public override float DistanceFromPlayer()
@@ -185,9 +200,17 @@ public class Player : BaseEntity, IHealthTrackingEntity, IBattleEntity
         throw new NotImplementedException();
     }
 
-    public override bool IsHostileTo(IBattleEntity other)
+    public bool IsHostileTo(IBattleEntity other)
     {
         return other is Monster;
+    }
+
+    public override string[] Attributes
+    {
+        get
+        {
+            return _battleTrait.FirstAttack.Attributes;
+        }
     }
 
 }

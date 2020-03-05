@@ -9,6 +9,8 @@ public class FixedMapGeneratorData : BaseMapGeneratorData
     public TextAsset MapInfo;
 
     public List<MonsterSpawnData> MonsterSpawns;
+    public List<TrapSpawn> TrapSpawns;
+    public List<BlockSpawn> BlockSpawns;
 
     public override GeneratorType GeneratorType => GeneratorType.Fixed;
     public int[] LevelData => _levelTiles;

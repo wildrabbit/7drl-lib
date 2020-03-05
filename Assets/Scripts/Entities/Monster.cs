@@ -31,8 +31,6 @@ public class Monster : BaseEntity,  IHealthTrackingEntity, IBattleEntity
     public float PathDelay => _monsterData.PathUpdateDelay;
     public float PathElapsed => _elapsedPathUpdate;
 
-    string IBattleEntity.Name => name;
-
     public HPTrait HPTrait => _hpTrait;
     public BaseMovingTrait MovingTrait => _movingTrait;
     public BattleTrait BattleTrait => _battleTrait;
@@ -205,10 +203,7 @@ public class Monster : BaseEntity,  IHealthTrackingEntity, IBattleEntity
         return !occupied || !(_entityController.GetEntitiesAt(coords, new BaseEntity[] { this }).Contains(_entityController.Player));
     }
 
-    public override float DistanceFromPlayer()
-    {
-        return _mapController.Distance(Coords, _entityController.Player.Coords);
-    }
+    
 
     public void RecalculatePath()
     {
@@ -232,7 +227,8 @@ public class Monster : BaseEntity,  IHealthTrackingEntity, IBattleEntity
         if(ValidNavigationCoords(_path[_currentPathIdx]))
         {
             var entitiesAt = _entityController.GetEntitiesAt(_path[_currentPathIdx], new BaseEntity[] { this });
-            if (entitiesAt.Count == 0 || !entitiesAt.Exists(x => x.IsHostileTo(this)))
+            var battleEntities = entitiesAt.FindAll(x => typeof(IBattleEntity).IsAssignableFrom(x.GetType())).ConvertAll(x => (IBattleEntity)x);
+            if (battleEntities.Count == 0 || !battleEntities.Exists(x => x.IsHostileTo(this)))
             {
                 Coords = _path[_currentPathIdx];
                 _currentPathIdx++;
@@ -278,7 +274,7 @@ public class Monster : BaseEntity,  IHealthTrackingEntity, IBattleEntity
         throw new NotImplementedException();
     }
 
-    public override bool IsHostileTo(IBattleEntity other)
+    public bool IsHostileTo(IBattleEntity other)
     {
         return other is Player;
     }

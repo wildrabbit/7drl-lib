@@ -1,5 +1,11 @@
 ﻿using UnityEngine;
 
+public interface IEntity
+{
+    string Name { get; }
+    Vector2Int Coords { get; }
+}
+
 public class BaseEntityDependencies
 {
     public Transform ParentNode;
@@ -17,7 +23,7 @@ public class TileBasedEffect
 
 public delegate void EntityMovedDelegate(Vector2Int nextCoords, Vector2 worldPos, BaseEntity entity);
 
-public abstract class BaseEntity : MonoBehaviour, IScheduledEntity
+public abstract class BaseEntity : MonoBehaviour, IEntity, IScheduledEntity
 {
     public string Name => _entityData.DisplayName;
     public virtual Vector2Int Coords
@@ -44,7 +50,7 @@ public abstract class BaseEntity : MonoBehaviour, IScheduledEntity
     protected IEntityController _entityController;
     protected IMapController _mapController;
     protected Vector2Int _coords;
-    protected bool _active;
+    protected bool _active;    
 
     public bool Frozen;
 
@@ -117,6 +123,16 @@ public abstract class BaseEntity : MonoBehaviour, IScheduledEntity
     {
     }
 
-    public abstract float DistanceFromPlayer();
-    public abstract bool IsHostileTo(IBattleEntity other);
+    public virtual float DistanceFromPlayer()
+    {
+        return _mapController.Distance(Coords, _entityController.Player.Coords);
+    }
+
+    public virtual string[] Attributes
+    {
+        get
+        {
+            return new string[] { };
+        }
+    }
 }

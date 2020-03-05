@@ -22,6 +22,23 @@ public class MonsterSpawnData
 
     public bool ActivatesByDistance;
     public int PlayerDistance;
+
+    public MonsterSpawnData Clone()
+    {
+        return new MonsterSpawnData()
+        {
+            Coords = this.Coords,
+            Monster = this.Monster,
+            SpawnTags = this.SpawnTags,
+            MinAmount = this.MinAmount,
+            MaxAmount = this.MaxAmount,
+            Scatter = this.Scatter,
+            MaxRespawns = this.MaxRespawns,
+            RespawnDelayTimeUnits = this.RespawnDelayTimeUnits,
+            ActivatesByDistance = this.ActivatesByDistance,
+            PlayerDistance = this.PlayerDistance
+        };
+    }
 }
 
 

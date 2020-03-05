@@ -12,8 +12,6 @@ public delegate void MonsterDestroyedDelegate(Monster monster);
 public delegate void PlayerMonsterCollision(Player p, Monster m, int playerDmg, int monsterDmg);
 public delegate void EntityHealthDelegate(BaseEntity e, int dmg, bool explosion, bool poison, bool heal, bool collision);
 
-
-
 public interface IEntityController
 {
     event PlayerDestroyedDelegate OnPlayerKilled;
@@ -31,6 +29,9 @@ public interface IEntityController
 
     Player CreatePlayer(PlayerData data, Vector2Int coords);
     Monster CreateMonster(MonsterData data, Vector2Int coords);
+    Trap CreateTrap(TrapData data, Vector2Int coords);
+    BlockingEntity CreateBlockingEntity(BlockingData data, Vector2Int coords);
+
     List<Monster> CreateMonsters(List<(MonsterData, Vector2Int)> list);
     T Create<T>(BaseEntity prefab, BaseEntityData data, BaseEntityDependencies deps) where T : BaseEntity;
 

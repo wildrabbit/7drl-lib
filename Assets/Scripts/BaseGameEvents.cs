@@ -121,6 +121,26 @@ public class BaseGameEvents
         }
     }
 
+    public class TrapEvents
+    {
+        public event Action<Trap, BaseEntity> EntityFellIntoTrap;
+
+        public void SentEntityIntoTrap(Trap leTrap, BaseEntity leVictim)
+        {
+            EntityFellIntoTrap?.Invoke(leTrap, leVictim);
+        }
+    }
+
+    public  class BlockingEvents
+    {
+        public event Action<IBlockingEntity, BaseEntity, bool> EntityBlockInteraction;
+
+        public void SentEntityBlockInteraction(IBlockingEntity leBlock, BaseEntity leEntity, bool unlocked)
+        {
+            EntityBlockInteraction?.Invoke(leBlock, leEntity, unlocked);
+        }
+    }
+
     public TimeEvents Time;
     public PlayerEvents Player;
     public MonsterEvents Monsters;
@@ -128,6 +148,8 @@ public class BaseGameEvents
     public FlowEvents Flow;
     public HPEvents Health;
     public BattleEvents Battle;
+    public TrapEvents Traps;
+    public BlockingEvents Blocks;
 
     public BaseGameEvents()
     {
@@ -138,5 +160,7 @@ public class BaseGameEvents
         Flow = new FlowEvents();
         Health = new HPEvents();
         Battle = new BattleEvents();
+        Traps = new TrapEvents();
+        Blocks = new BlockingEvents();
     }
 }

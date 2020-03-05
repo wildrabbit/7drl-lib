@@ -63,7 +63,8 @@ public class EntityController : IEntityController
             ParentNode = null,
             EntityController = this,
             Coords = coords,
-            MapController = _mapController
+            MapController = _mapController,
+            GameEvents = _gameEvents
         };
         var monster = Create<Monster>(_entityCreationData.MonsterPrefab, data, deps);
         return monster;
@@ -86,6 +87,34 @@ public class EntityController : IEntityController
             addedMonsters.Add(monster);
         }
         return addedMonsters;
+    }
+
+    public Trap CreateTrap(TrapData data, Vector2Int coords)
+    {
+        BaseEntityDependencies deps = new BaseEntityDependencies()
+        {
+            ParentNode = null,
+            EntityController = this,
+            Coords = coords,
+            MapController = _mapController,
+            GameEvents = _gameEvents
+        };
+        var trigger = Create<Trap>(_entityCreationData.TrapPrefab, data, deps);
+        return trigger;
+    }
+
+    public BlockingEntity CreateBlockingEntity(BlockingData data, Vector2Int coords)
+    {
+        BaseEntityDependencies deps = new BaseEntityDependencies()
+        {
+            ParentNode = null,
+            EntityController = this,
+            Coords = coords,
+            MapController = _mapController,
+            GameEvents = _gameEvents
+        };
+        var blockingEntity = Create<BlockingEntity>(_entityCreationData.BlockPrefab, data, deps);
+        return blockingEntity;
     }
 
     public T Create<T>(BaseEntity prefab, BaseEntityData data, BaseEntityDependencies deps) where T : BaseEntity
@@ -258,5 +287,4 @@ public class EntityController : IEntityController
     {
         OnEntityHealth?.Invoke(entity, healthDelta, isExplosion, isPoison, isHeal, isCollision);
     }
-
 }

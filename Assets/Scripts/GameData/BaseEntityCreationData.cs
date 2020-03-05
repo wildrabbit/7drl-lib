@@ -10,4 +10,8 @@ public class BaseEntityCreationData : ScriptableObject
 
     public List<MonsterData> MonsterData;
     public Monster MonsterPrefab;
+
+    public BlockingEntity BlockPrefab;
+    public Trap TrapPrefab;
+
 }

@@ -198,6 +198,9 @@ public abstract class GameController : MonoBehaviour
         _monsterCreator.RegisterSpawnPoints(FetchMonsterSpawnPoints());
         _monsterCreator.ProcessInitialSpawns();
 
+        BuildTraps();
+        BuildBlocks();
+
         ExtendedPopulate();
 
         _entityController.AddNewEntities();
@@ -206,6 +209,16 @@ public abstract class GameController : MonoBehaviour
 
     protected virtual void ExtendedPopulate()
     { }
+
+    protected virtual void BuildTraps()
+    {
+        
+    }
+
+    protected virtual void BuildBlocks()
+    {
+        
+    }
 
     protected virtual List<MonsterSpawnData> FetchMonsterSpawnPoints()
     {

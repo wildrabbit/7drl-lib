@@ -8,13 +8,11 @@ public enum BattleRole
     Defender
 }
 
-public interface IBattleEntity
+public interface IBattleEntity: IEntity
 {
-    string Name { get; }
     HPTrait HPTrait { get; }
     BattleTrait BattleTrait { get;  }
-    Vector2Int Coords { get; }
-
+    
     bool IsHostileTo(IBattleEntity other);         
 
     void ApplyBattleResults(BattleActionResult result, BattleRole role);
@@ -22,6 +20,7 @@ public interface IBattleEntity
 
 public class BattleTrait
 {
+    public BaseAttack FirstAttack => (_attacks == null || _attacks.Count == 0) ? null : _attacks[0];
     BaseAttack CurrentAttack => _attacks[_currentAttackIdx];
     IBattleEntity Owner => _owner;
     IBattleEntity _owner;

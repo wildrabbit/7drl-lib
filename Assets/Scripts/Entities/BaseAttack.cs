@@ -8,6 +8,7 @@ public abstract class BaseAttack
     public bool Ready => Data.Cooldown == 0 || Elapsed < 0 || Elapsed >= (float)Data.Cooldown;
     public BaseAttackData Data;
     public float Elapsed;
+    public string[] Attributes => Data.Attributes;
 
     public abstract void Init();
     

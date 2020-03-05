@@ -22,6 +22,8 @@ public class BattleTrait
 {
     public BaseAttack FirstAttack => (_attacks == null || _attacks.Count == 0) ? null : _attacks[0];
     BaseAttack CurrentAttack => _attacks[_currentAttackIdx];
+
+    public int Damage => UnityEngine.Random.Range(CurrentAttack.Data.MinDamage, CurrentAttack.Data.MaxDamage);
     IBattleEntity Owner => _owner;
     IBattleEntity _owner;
 
@@ -36,7 +38,7 @@ public class BattleTrait
     IEntityController _entityController;
     BaseGameEvents.BattleEvents _battleEvents;
 
-    public void Init(IEntityController entityController,  BattleTraitData data, IBattleEntity owner, BaseGameEvents.BattleEvents battleEvents)
+    public void Init(IEntityController entityController, IMapController mapController, BattleTraitData data, IBattleEntity owner, BaseGameEvents.BattleEvents battleEvents)
     {
         _data = data;
         _entityController = entityController;
@@ -47,7 +49,7 @@ public class BattleTrait
         foreach(var attackData in data.Attacks)
         {
             var attack = attackData.SpawnRuntime();
-            attack.Init();
+            attack.Init(entityController, mapController);
             _attacks.Add(attack);
         }
     }
@@ -55,40 +57,29 @@ public class BattleTrait
     public bool TryGetAvailableAttack()
     {
         int bestIdx = -1;
-        int bestTotalDamage = 0;
-        MoveDirection moveDir = MoveDirection.None;
+        int bestAverageDamage = 0;
         List<IBattleEntity> bestTargets = new List<IBattleEntity>();
-
-        MoveDirection[] rotations = new MoveDirection[]
-        {
-            MoveDirection.N, MoveDirection.E, MoveDirection.S, MoveDirection.W
-        };
        
         for (int i = 0; i < _attacks.Count; ++i)
         {
             if (!_attacks[i].Ready) continue;
 
-            foreach (var rot in rotations)
+            var targets = _attacks[i].FindAllReachableTargets(_owner);
+            if (targets.Count == 0) continue;
+            
+            int totalDamage = targets.Count * (_attacks[i].Data.MinDamage + _attacks[i].Data.MaxDamage) / 2;
+            if (totalDamage >= bestAverageDamage)
             {
-                var targets = FindAttackTargets(_attacks[i], rot);
-                if (targets.Count > 0)
-                {
-                    int totalDamage = targets.Count * _attacks[i].Data.AddedDamage;
-                    if (totalDamage >= bestTotalDamage)
-                    {
-                        bestIdx = i;
-                        bestTotalDamage = _attacks[i].Data.AddedDamage;
-                        moveDir = rot;
-                        bestTargets = targets;
-                    }
-                }
-            }
+                bestIdx = i;
+                bestAverageDamage = totalDamage;
+                bestTargets = targets;
+            }                        
         }
-
+            
         if (bestIdx >= 0)
         {
             _currentAttackIdx = bestIdx;
-            PrepareAttack(bestTargets, moveDir);
+            PrepareAttack(bestTargets);
             return true;
         }
 
@@ -99,81 +90,34 @@ public class BattleTrait
 
     public bool TryAttackCoords(Vector2Int newPlayerCoords)
     {
-        MoveDirection direction = ResolveDirectionFromCoords(_owner.Coords, newPlayerCoords);
-        var targets = FindAttackTargets(_attacks[_currentAttackIdx], direction);
-        var targetsAtCoords = targets.FindAll(x => x.Coords == newPlayerCoords);
-        PrepareAttack(targets, direction);
+        var targets = CurrentAttack.FindTargetsAtCoords(_owner, newPlayerCoords);
+        PrepareAttack(targets);
         var defeated = StartAttack();
-        return defeated.IsSupersetOf(targetsAtCoords);
+        return defeated.IsSupersetOf(targets);
     }
 
     public bool CanAttackEntity(IBattleEntity other)
     {
-        MoveDirection direction = ResolveDirectionFromCoords(_owner.Coords, other.Coords);
-        return ExistsTargets(_attacks[_currentAttackIdx], direction);
+        return CurrentAttack.CanTargetBeReached(_owner, other);
     }
 
     public bool TryAttackEntity(IBattleEntity other)
     {
-        MoveDirection direction = ResolveDirectionFromCoords(_owner.Coords, other.Coords);
-        var targets = FindAttackTargets(_attacks[_currentAttackIdx], direction);
-        PrepareAttack(targets, direction);
+        bool canAttack = _owner.IsHostileTo(other) && CurrentAttack.CanTargetBeReached(_owner, other);
+        if(canAttack)
+        {
+            PrepareAttack(CurrentAttack.FindAllReachableTargets(_owner));
+        }
         var defeated = StartAttack();
         return defeated.Contains(other);
     }
 
-    public void PrepareAttack(List<IBattleEntity> targets, MoveDirection attackDirection)
+    public void PrepareAttack(List<IBattleEntity> targets)
     {
         _targets = targets;
-        _attackDirection = attackDirection;
     }
 
-    public List<IBattleEntity> FindAttackTargets(BaseAttack attack, MoveDirection direction)
-    {
-        List<IBattleEntity> results = new List<IBattleEntity>();
-        var offsets = attack.GetRotatedOffsets(direction);
-        foreach(var offset in offsets)
-        {
-            var entities = _entityController.GetEntitiesAt(offset + _owner.Coords);
-            var filteredHostiles = entities.FindAll(x => typeof(IBattleEntity).IsAssignableFrom(x.GetType())).ConvertAll(x =>(IBattleEntity)x);
-            filteredHostiles.RemoveAll(x => !x.IsHostileTo(_owner));
-            results.AddRange(filteredHostiles);
-        }
-        return results;
-    }
-
-    public bool ExistsTargets(BaseAttack attack, MoveDirection direction)
-    {
-        var offsets = attack.GetRotatedOffsets(direction);
-        foreach (var offset in offsets)
-        {
-            var entities = _entityController.GetEntitiesAt(offset + _owner.Coords);
-            var filteredHostiles = entities.FindAll(x => typeof(IBattleEntity).IsAssignableFrom(x.GetType())).ConvertAll(x => (IBattleEntity)x);
-            filteredHostiles.RemoveAll(x => !x.IsHostileTo(_owner));
-            if(filteredHostiles.Count > 0)
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public MoveDirection ResolveDirectionFromCoords(Vector2Int src, Vector2Int tgt)
-    {
-        Vector2 offset = tgt - src;
-        if (offset.Equals(Vector2Int.zero))
-        {
-            return MoveDirection.None;
-        }
-
-        if (Mathf.Abs(offset.x) >= Mathf.Abs(offset.y))
-        {
-            return offset.x >= 0 ? MoveDirection.N : MoveDirection.S;
-        }
-        else return offset.y >= 0 ? MoveDirection.E : MoveDirection.W;
-
-    }
-
+  
     public HashSet<IBattleEntity> StartAttack()
     {
         // Use direction for the view
@@ -191,8 +135,7 @@ public class BattleTrait
         return defeated;
     }
     
-     public int Damage => _attacks[_currentAttackIdx].Data.AddedDamage /* +CharacterDamage */;
-
+     
 
     string Name { get; }
 

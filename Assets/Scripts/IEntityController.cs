@@ -35,6 +35,8 @@ public interface IEntityController
     List<Monster> CreateMonsters(List<(MonsterData, Vector2Int)> list);
     T Create<T>(BaseEntity prefab, BaseEntityData data, BaseEntityDependencies deps) where T : BaseEntity;
 
+    List<T> GetFilteredEntitiesAt<T>(Vector2Int coords);
+
     bool ExistsNearbyEntity(Vector2Int coords, int radius, BaseEntity[] excluded = null);
     bool ExistsEntitiesAt(Vector2Int coords, BaseEntity[] excluded = null); // We could use the former with radius == 0, but with this we skip the distance calculations
     List<BaseEntity> GetEntitiesAt(Vector2Int actionTargetCoords, BaseEntity[] excluded = null);

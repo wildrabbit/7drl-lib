@@ -287,4 +287,9 @@ public class EntityController : IEntityController
     {
         OnEntityHealth?.Invoke(entity, healthDelta, isExplosion, isPoison, isHeal, isCollision);
     }
+
+    public List<T> GetFilteredEntitiesAt<T>(Vector2Int coords)
+    {
+        return GetEntitiesAt(coords).FindAll(x => typeof(T).IsAssignableFrom(x.GetType())).ConvertAll(x => (T)((object)x));
+    }
 }

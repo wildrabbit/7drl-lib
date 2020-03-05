@@ -87,7 +87,7 @@ public class PlayerActionState : IPlayState
                     return nextPlayState;
                 }
 
-                if (player.CanAttackCoords(newPlayerCoords))
+                if (player.SeesHostilesAtCoords(newPlayerCoords))
                 {
                     bool allDefeated = player.AttackCoords(newPlayerCoords);
                     canMove = allDefeated;

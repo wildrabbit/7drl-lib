@@ -76,7 +76,7 @@ public class Player : BaseEntity, IHealthTrackingEntity, IBattleEntity
         _healthEvents.HealthExhausted += OnDied;
 
         _battleTrait = new BattleTrait();
-        _battleTrait.Init(_entityController, _playerData.BattleData, this, deps.GameEvents.Battle);
+        _battleTrait.Init(_entityController, _mapController, _playerData.BattleData, this, deps.GameEvents.Battle);
     }
 
     public override void AddTime(float timeUnits, ref int playState)
@@ -176,11 +176,12 @@ public class Player : BaseEntity, IHealthTrackingEntity, IBattleEntity
         return (tile != null && _movingTrait.EvaluateTile(tile));        
     }
 
-    public bool CanAttackCoords(Vector2Int testCoords)
+    public bool SeesHostilesAtCoords(Vector2Int testCoords)
     {
         var nearby = _entityController.GetEntitiesAt(testCoords);
-        List<IBattleEntity> result = nearby.FindAll(x => x is Monster).ConvertAll(x => (IBattleEntity)x);
-        return result.Count > 0;
+        List<IBattleEntity> hostiles = CollectionUtils.GetImplementors<BaseEntity, IBattleEntity>(nearby).FindAll(x => x.IsHostileTo(this));
+
+        return hostiles.Count > 0;
     }
 
     public override float DistanceFromPlayer()
@@ -193,11 +194,6 @@ public class Player : BaseEntity, IHealthTrackingEntity, IBattleEntity
         var nearby = _entityController.GetNearbyEntities(Coords, radius);
         List<IBattleEntity> result = nearby.FindAll(x => x is Monster).ConvertAll(x => (IBattleEntity)x);
         return result;
-    }
-
-    public bool TryFindAttack(BaseAttack attack, out MoveDirection direction, out List<IBattleEntity> targets)
-    {
-        throw new NotImplementedException();
     }
 
     public bool IsHostileTo(IBattleEntity other)

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Tilemaps;
 
 public class RangeAttack : BaseAttack
 {
@@ -95,21 +96,24 @@ public class RangeAttack : BaseAttack
 
         var line = BoundedLine(srcCoords, tgtCoords);
 
-        bool firstProcessed = false;
+        bool blockersFound = false;
         foreach (var lineCoord in line)
         {
-            int distanceToSrc = _mapController.Distance(srcCoords, lineCoord);
-
-            if (firstProcessed && !_rangeData.AllowedTiles.Contains(_mapController.GetTileAt(lineCoord)))
+            if (blockersFound)
             {
                 break; // Occluder found
             }
 
-            if (!firstProcessed)
+            int distanceToSrc = _mapController.Distance(srcCoords, lineCoord);
+            bool groundBlockFound = !_rangeData.AllowedTiles.Contains(_mapController.GetTileAt(lineCoord));
+            if(groundBlockFound)
             {
-                firstProcessed = true;
+                if(!blockersFound)
+                {
+                    blockersFound = true;
+                }
             }
-
+            
             var others = _entityController.GetEntitiesAt(lineCoord);
             var hostileOthers = CollectionUtils.GetImplementors<BaseEntity, IBattleEntity>(others);
             hostileOthers.RemoveAll(x => !source.IsHostileTo(x));
@@ -119,7 +123,6 @@ public class RangeAttack : BaseAttack
             {
                 break;
             }
-
         }
         return candidates;
     }
@@ -127,47 +130,50 @@ public class RangeAttack : BaseAttack
     public override List<bool> GetReachableStateForCoords(IBattleEntity source, List<Vector2Int> coords)
     {
         var srcCoords = source.Coords;
-        List<bool> occluded = new List<bool>();
-        bool firstFound = false;
-        bool blockingFound = false;
+        List<bool> visible = new List<bool>();
+        bool anyBlockingFound = false;
 
         for (int i = 0; i < coords.Count; ++i)
         {
             int dist = _mapController.Distance(srcCoords, coords[i]);
             if (dist <_rangeData.MinRange || dist > _rangeData.MaxRange )
             {
-                occluded.Add(false);
+                visible.Add(false);
                 continue;
             }
 
-            if (firstFound && !_rangeData.AllowedTiles.Contains(_mapController.GetTileAt(coords[i])))
+            if (anyBlockingFound)
             {
-                occluded.Add(false);
-                blockingFound = true;
-                continue; // Occluder found
+                visible.Add(false);
+                continue;
             }
 
-            if(!firstFound)
+            TileBase tile = _mapController.GetTileAt(coords[i]);
+            if (!_rangeData.AllowedTiles.Contains(tile))
             {
-                firstFound = true;
+                if(!anyBlockingFound)
+                {
+                    anyBlockingFound = true;
+                }
+                else
+                {
+                    visible.Add(false);
+                    continue; // Occluder found
+                }
             }
 
-            if(blockingFound)
-            {
-                occluded.Add(false);
-                break;
-            }
 
             var others = _entityController.GetEntitiesAt(coords[i]);
-
-            bool blockingExists = others.Exists(x => x.BlocksRanged(_rangeData.Piercing));
-            occluded.Add(!blockingExists);
-
-            if (!blockingFound && blockingExists)
+            bool blockersFound = others.Exists(x => x.BlocksRanged(_rangeData.Piercing));
+            var hostiles = CollectionUtils.GetImplementors<BaseEntity, IBattleEntity>(others);
+            hostiles.RemoveAll(x => !source.IsHostileTo(x));
+            visible.Add(hostiles.Count > 0 || !blockersFound);
+            
+            if (!anyBlockingFound && blockersFound)
             {
-                blockingFound = true;
+                anyBlockingFound = true;
             }
         }
-        return occluded;
+        return visible;
     }
 }

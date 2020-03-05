@@ -23,9 +23,11 @@ public class RangeSelectStateContext : PlayStateContext
     public void RefreshTargetView(MoveDirection dir)
     {
         var offset = MapController.CalculateMoveOffset(dir, Target);
-        if(MapController.ValidCoords(new Vector3Int(Target.x, Target.y, 0)))
+
+        Target += offset;
+
+        if (MapController.ValidCoords(new Vector3Int(Target.x, Target.y, 0)))
         {
-            Target += offset;
             var targets = BresenhamUtils.CalculateLine(EntityController.Player.Coords, Target);
             List<bool> targetOccluded;
             EntityController.Player.BattleTrait.GetReachableStateForCoords(targets, out targetOccluded);
@@ -33,6 +35,7 @@ public class RangeSelectStateContext : PlayStateContext
 
             _viewInstance.RefreshLine(targetPositions, targetOccluded);
         }
+        else Target -= offset;
     }
 
     public void ClearTargetView()
@@ -73,7 +76,7 @@ public class RangeSelectState : IPlayState
             ctxt.RefreshTargetView(ctxt.Input.MoveDir);
         }
 
-        if(ctxt.Input.ActionConfirm)
+        if(ctxt.Input.ActionConfirm || ctxt.Input.RangeStart)
         {
             ctxt.ClearTargetView();
             willSpendTime = ctxt.EntityController.Player.BattleTrait.TryAttackCoords(ctxt.Target);

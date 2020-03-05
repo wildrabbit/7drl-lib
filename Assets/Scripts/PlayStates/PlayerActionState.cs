@@ -65,6 +65,18 @@ public class PlayerActionState : IPlayState
 
                 // Check interactions
                 bool canMove = true;
+
+                // Blockers:
+                var blocker = FindBlockingEntityAt(entityController, newPlayerCoords);
+                if(blocker != null)
+                {
+                    if (blocker.BlockingTrait.TryUnlock(player))
+                    {
+                        player.Coords = newPlayerCoords;
+                    }
+                    return nextPlayState;
+                }
+
                 bool exit = HandleAdditionalMoveInteractions(actionData, newPlayerCoords, ref nextPlayState, ref canMove);
                 if(exit)
                 {
@@ -97,6 +109,14 @@ public class PlayerActionState : IPlayState
 
         return GameController.PlayStates.Action;
     }
+
+    public IBlockingEntity FindBlockingEntityAt(IEntityController entityController, Vector2Int coords)
+    {
+        var entities = entityController.GetEntitiesAt(coords);
+        var blocking = CollectionUtils.GetImplementors<BaseEntity, IBlockingEntity>(entities);
+        return blocking.Count > 0 ? blocking[0] : null;
+    }
+
 
     protected virtual bool HandleAdditionalMoveInteractions(PlayerActionStateContext contextData, Vector2Int newPlayerCoords, ref int nextPlayState, ref bool canMove)
     {

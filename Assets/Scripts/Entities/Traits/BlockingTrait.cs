@@ -23,7 +23,14 @@ public class BlockingTrait
     public bool CanBeUnlockedByEntity(BaseEntity entity)
     {
         // No distance checks here, this will be called depending on specific interactions (i.e, player bumping, projectile colliding, etc)
-        return Array.Exists(_traitData.UnlockAttributes, unlockingAttr => Array.IndexOf(entity.Attributes, unlockingAttr) >= 0);
+        foreach(var traitAttribute in _traitData.UnlockAttributes)
+        {
+            if(Array.IndexOf(entity.Attributes, traitAttribute) >= 0)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     public bool CanBeTrespassedByEntity(BaseEntity entity)

@@ -28,7 +28,11 @@ public class RangeAttack : BaseAttack
         while(firstIdx < rangeLine.Count && distance < _rangeData.MinRange)
         {
             firstIdx++;
-            distance = _mapController.Distance(src, rangeLine[firstIdx]);
+            if(firstIdx < rangeLine.Count)
+            {
+                distance = _mapController.Distance(src, rangeLine[firstIdx]);
+            }
+
         }
 
         int lastIdx = rangeLine.Count - 1;
@@ -81,9 +85,11 @@ public class RangeAttack : BaseAttack
     {
         var allInMaxRange = _entityController.GetNearbyEntities(source.Coords, _rangeData.MaxRange);
         allInMaxRange.RemoveAll(x => !typeof(IBattleEntity).IsAssignableFrom(x.GetType()));
-        allInMaxRange.RemoveAll(x => _mapController.Distance(x.Coords, source.Coords) < _rangeData.MinRange);
+
         var allBattlers = allInMaxRange.ConvertAll(x => (IBattleEntity)x);
-        allBattlers.RemoveAll(x => !source.IsHostileTo(x) && !CanTargetBeReached(source, x)); // TODO: Optimise canTargetBeReached
+        allBattlers.RemoveAll(x => !source.IsHostileTo(x));
+        allBattlers.RemoveAll(x => _mapController.Distance(x.Coords, source.Coords) < _rangeData.MinRange);        
+        allBattlers.RemoveAll(x => !CanTargetBeReached(source, x));
         return allBattlers;        
     }
 

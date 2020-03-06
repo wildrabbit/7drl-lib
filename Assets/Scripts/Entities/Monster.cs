@@ -92,7 +92,7 @@ public class Monster : BaseEntity,  IHealthTrackingEntity, IBattleEntity
         _currentStateTimeUnitsElapsed = 0.0f;
 
         _battleTrait = new BattleTrait();
-        _battleTrait.Init(_entityController, _mapController, _monsterData.BattleData, this, deps.GameEvents.Battle);
+        _battleTrait.Init(_entityController, _mapController, _monsterData.BattleData, this, deps.GameEvents);
     }
 
     public override void AddTime(float timeUnits, ref int playContext)

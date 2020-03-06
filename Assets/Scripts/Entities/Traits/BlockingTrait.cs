@@ -12,6 +12,7 @@ public class BlockingTrait
     BlockingTraitData _traitData;
     IBlockingEntity _owner;
     BaseGameEvents.BlockingEvents _blockEvents;
+    public string[] Attributes => _traitData.UnlockAttributes;
 
     public void Init(IBlockingEntity owner, BlockingTraitData data, BaseGameEvents.BlockingEvents blockEvents)
     {

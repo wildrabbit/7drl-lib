@@ -41,16 +41,19 @@ public class BattleTrait
     }
 
     IEntityController _entityController;
+    BaseGameEvents _gameEvents;
     BaseGameEvents.BattleEvents _battleEvents;
 
-    public void Init(IEntityController entityController, IMapController mapController, BattleTraitData data, IBattleEntity owner, BaseGameEvents.BattleEvents battleEvents)
+    public void Init(IEntityController entityController, IMapController mapController, BattleTraitData data, IBattleEntity owner, BaseGameEvents gameEvents)
     {
+        _targets = new List<IBattleEntity>();
         _data = data;
         _entityController = entityController;
         _owner = owner;
         _attacks = new List<BaseAttack>();
         _currentAttackIdx = 0;
-        _battleEvents = battleEvents;
+        _gameEvents = gameEvents;
+        _battleEvents = gameEvents.Battle;
         foreach(var attackData in data.Attacks)
         {
             var attack = attackData.SpawnRuntime();
@@ -59,6 +62,7 @@ public class BattleTrait
         }
     }
 
+    
     public bool TryGetAvailableAttack()
     {
         int bestIdx = -1;
@@ -95,10 +99,20 @@ public class BattleTrait
 
     public bool TryAttackCoords(Vector2Int newPlayerCoords)
     {
+        if (!CurrentAttack.Ready)
+        {
+            _battleEvents.SendAttemptedAttackOnCooldown(_owner);
+            return false;
+        }
+            
         var targets = CurrentAttack.FindTargetsAtCoords(_owner, newPlayerCoords);
-        PrepareAttack(targets);
-        var defeated = StartAttack();
-        return defeated.IsSupersetOf(targets);
+        if(targets.Count > 0)
+        {
+            PrepareAttack(targets);
+            var defeated = StartAttack();
+            return defeated.IsSupersetOf(targets);
+        }
+        return false;
     }
 
     public bool CanAttackEntity(IBattleEntity other)
@@ -137,15 +151,18 @@ public class BattleTrait
                 defeated.Add(target);
             }
         }
-
-        if(_targets.Count > 0)
+       
+        if (_targets.Count > 0)
+        {
             _attacks[_currentAttackIdx].Elapsed = 0;
+        }
         return defeated;
     }
     
      
 
     string Name { get; }
+    public bool RangedAttack => (CurrentAttack is RangeAttack);
 
     public void TickCooldowns(float timeUnits)
     {

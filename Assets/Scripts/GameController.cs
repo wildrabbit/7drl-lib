@@ -47,6 +47,7 @@ public abstract class GameController : MonoBehaviour
     float _inputDelay;
     
     int _playStateID;
+    int _nextPlayStateID;
     bool _loading;
     public bool Loading => _loading;
     
@@ -192,6 +193,7 @@ public abstract class GameController : MonoBehaviour
         };
 
         _playStateID = PlayStates.Action;
+        _nextPlayStateID = PlayStates.Action;
         _result = GameResult.Running;
 
         _hud.Init(_eventLogger, _entityController.Player, _timeController, _cameraController.UICamera);
@@ -249,8 +251,8 @@ public abstract class GameController : MonoBehaviour
     private void OnPlayerDied()
     {
         _result = GameResult.Lost;
-        _playStateID = PlayStates.GameOver;
-        ((GameOverStateContext)_playStatesData[_playStateID]).Elapsed = 0.0f;
+        _nextPlayStateID = PlayStates.GameOver;
+        ((GameOverStateContext)_playStatesData[_nextPlayStateID]).Elapsed = 0.0f;
 
         _gameEvents.Flow.SendGameOver(_result);
     }
@@ -272,7 +274,7 @@ public abstract class GameController : MonoBehaviour
         var currentState = _playStatesData[_playStateID];
 
         currentState.Refresh(this);
-        int nextPlayState = _playStates[_playStateID].Update(_playStatesData[_playStateID], out var timeWillPass);
+        _nextPlayStateID = _playStates[_playStateID].Update(_playStatesData[_playStateID], out var timeWillPass);
 
 
         if (timeWillPass)
@@ -283,10 +285,10 @@ public abstract class GameController : MonoBehaviour
         _entityController.RemovePendingEntities();
         _entityController.AddNewEntities();
 
-        if (_playStateID != nextPlayState)
+        if (_playStateID != _nextPlayStateID)
         {
             _playStates[_playStateID].Exit(_playStatesData[_playStateID]);
-            _playStateID = nextPlayState;
+            _playStateID = _nextPlayStateID;
             _playStates[_playStateID].Enter(_playStatesData[_playStateID]);
         }
 

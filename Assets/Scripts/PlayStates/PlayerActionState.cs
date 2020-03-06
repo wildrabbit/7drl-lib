@@ -41,7 +41,7 @@ public class PlayerActionState : IPlayState
             return GameController.PlayStates.Action;
         }
 
-        if(input.RangeStart)
+        if(input.RangeStart && player.BattleTrait.RangedAttack)
         {
             timeWillPass = false;
             return GameController.PlayStates.RangePrepare;

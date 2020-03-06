@@ -5,6 +5,7 @@ using UnityEngine;
 public class Trap : BaseEntity, ITriggerEntity
 {
     public override bool BlocksRanged(bool piercing) => false;
+    public override bool BlocksMovement => false;
     public TriggerTrait Trigger => _triggerTrait;
     TriggerTrait _triggerTrait;
     TrapData _trapData;
@@ -12,6 +13,7 @@ public class Trap : BaseEntity, ITriggerEntity
 
     Dictionary<BaseEntity, float> _entitiesAtTrap;
     BaseGameEvents.EntityEvents _entityEvents;
+    BaseGameEvents.TrapEvents _trapEvents;
 
     protected override void DoInit(BaseEntityDependencies dependencies)
     {
@@ -21,6 +23,7 @@ public class Trap : BaseEntity, ITriggerEntity
         _entitiesAtTrap = new Dictionary<BaseEntity, float>();
         _entityEvents = dependencies.GameEvents.Entities;
         _entityEvents.EntitiesRemoved += EntitiesRemoved;
+        _trapEvents = dependencies.GameEvents.Traps;
     }
 
     private void EntitiesRemoved(List<BaseEntity> removedEntities)
@@ -72,6 +75,7 @@ public class Trap : BaseEntity, ITriggerEntity
         if (typeof(IHealthTrackingEntity).IsAssignableFrom(e.GetType()))
         {
             ((IHealthTrackingEntity)e).HPTrait.Decrease(_trapData.Damage);
+            _trapEvents.SentEntityIntoTrap(this, e);
         }
     }
 

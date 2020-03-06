@@ -80,7 +80,7 @@ public class Player : BaseEntity, IHealthTrackingEntity, IBattleEntity
         _healthEvents.HealthExhausted += OnDied;
 
         _battleTrait = new BattleTrait();
-        _battleTrait.Init(_entityController, _mapController, _playerData.BattleData, this, deps.GameEvents.Battle);
+        _battleTrait.Init(_entityController, _mapController, _playerData.BattleData, this, deps.GameEvents);
     }
 
     public override void AddTime(float timeUnits, ref int playState)

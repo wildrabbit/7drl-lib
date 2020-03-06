@@ -45,6 +45,7 @@ public abstract class BaseEntity : MonoBehaviour, IEntity, IScheduledEntity
         set => _active = value;
     }
 
+    public virtual bool BlocksMovement => true;
     public virtual bool BlocksRanged(bool piercing) => true;
 
     public virtual string[] Attributes

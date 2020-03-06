@@ -114,10 +114,16 @@ public class BaseGameEvents
     public class BattleEvents
     {
         public event Action<IBattleEntity, IBattleEntity, BattleActionResult> Attack;
+        public event Action<IBattleEntity> AttemptedAttackOnCooldown;
 
         public void SendAttack(IBattleEntity attacker, IBattleEntity defender, BattleActionResult result)
         {
             Attack?.Invoke(attacker, defender, result);
+        }
+
+        public void SendAttemptedAttackOnCooldown(IBattleEntity attacker)
+        {
+            AttemptedAttackOnCooldown?.Invoke(attacker);
         }
     }
 

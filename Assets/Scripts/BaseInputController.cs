@@ -61,7 +61,7 @@ public enum LayoutType
 
 public class BaseInputController
 {
-    float _moveInputDelay;
+    protected float _moveInputDelay;
     LayoutType _currentLayout = LayoutType.Qwerty;
 
     BaseInputData _inputData;
@@ -84,8 +84,6 @@ public class BaseInputController
 
     InputEntry actionCancel;
     InputEntry actionConfirm;
-
-    InputEntry dropAbsorption;
 
     public bool[] NumbersPressed;
     public KeyCode StartKeyCode;
@@ -129,12 +127,16 @@ public class BaseInputController
         actionConfirm = new InputEntry(KeyCode.Return, _moveInputDelay);
 
         rangeTarget = new InputEntry(KeyCode.J, _moveInputDelay);
-        dropAbsorption = new InputEntry(KeyCode.U, _moveInputDelay);
+
 
         NumbersPressed = new bool[_inputData.NumberKeys];
         NumbersPressed.Fill<bool>(false);
         StartKeyCode = KeyCode.Alpha1;
+
+        DoInit();   
     }
+
+    public virtual void DoInit() { }
 
     public void Read()
     {
@@ -146,7 +148,7 @@ public class BaseInputController
 
         idle.Read();
         rangeTarget.Read();
-        dropAbsorption.Read();
+
         actionConfirm.Read();
         actionCancel.Read();
 

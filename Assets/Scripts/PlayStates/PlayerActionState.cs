@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class PlayerActionStateContext : PlayStateContext
 {
@@ -24,6 +25,11 @@ public class PlayerActionState : IPlayState
 {
     public int Update(PlayStateContext contextData, out bool timeWillPass)
     {
+
+        if(Input.GetKeyDown(KeyCode.F4))
+        {
+            SceneManager.LoadScene(0);
+        }
         PlayerActionStateContext actionData = contextData as PlayerActionStateContext;
         BaseInputController input = actionData.Input;
         IMapController map = actionData.Map;

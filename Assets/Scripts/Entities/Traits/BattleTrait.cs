@@ -33,7 +33,6 @@ public class BattleTrait
     int _currentAttackIdx;
 
     List<IBattleEntity> _targets;
-    MoveDirection _attackDirection;
 
     public void GetReachableStateForCoords(List<Vector2Int> coords, out List<bool> state)
     {
@@ -91,8 +90,6 @@ public class BattleTrait
             PrepareAttack(bestTargets);
             return true;
         }
-
-        _attackDirection = MoveDirection.None;
         _targets?.Clear();
         return false;
     }

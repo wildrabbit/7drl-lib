@@ -29,8 +29,7 @@ public class RangeSelectStateContext : PlayStateContext
         if (MapController.ValidCoords(new Vector3Int(Target.x, Target.y, 0)))
         {
             var targets = BresenhamUtils.CalculateLine(EntityController.Player.Coords, Target);
-            List<bool> targetOccluded;
-            EntityController.Player.BattleTrait.GetReachableStateForCoords(targets, out targetOccluded);
+            EntityController.Player.BattleTrait.GetReachableStateForCoords(targets, out List<bool> targetOccluded);
             var targetPositions = targets.ConvertAll(x => MapController.WorldFromCoords(x));
 
             _viewInstance.RefreshLine(targetPositions, targetOccluded);

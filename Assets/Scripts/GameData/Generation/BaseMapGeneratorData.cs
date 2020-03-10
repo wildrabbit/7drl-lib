@@ -5,7 +5,8 @@ using UnityEngine;
 public enum GeneratorType
 {
     Fixed,
-    BSP
+    BSP,
+    Room7DRL
 }
 
 public abstract class BaseMapGeneratorData : ScriptableObject
